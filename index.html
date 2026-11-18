@@ -1,0 +1,3579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teacher Effectiveness Rating & Observation Matrix (CLASS Framework) — Cloud Admin</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter for crisp rubric readability -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            rubric: {
+              header: '#d6d9df',
+              border: '#8c939e',
+              lowBg: '#fef2f2',
+              lowBorder: '#ef4444',
+              midBg: '#fffbeb',
+              midBorder: '#f59e0b',
+              highBg: '#ecfdf5',
+              highBorder: '#10b981'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f3f4f6;
+      color: #1f2937;
+    }
+
+    /* Classic Rubric Styling coupled with Interactive States */
+    .rubric-banner {
+      background-color: #d9dce2;
+      border: 2px solid #6b7280;
+    }
+
+    .rubric-col-header {
+      background-color: #d9dce2;
+      border-top: 2px solid #6b7280;
+      border-bottom: 2px solid #6b7280;
+    }
+
+    .rating-cell {
+      transition: all 0.18s ease-in-out;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .rating-cell:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    }
+
+    .rating-selected-low {
+      background-color: #fef2f2 !important;
+      border-color: #dc2626 !important;
+      box-shadow: inset 0 0 0 2px #dc2626;
+    }
+
+    .rating-selected-mid {
+      background-color: #fffbeb !important;
+      border-color: #d97706 !important;
+      box-shadow: inset 0 0 0 2px #d97706;
+    }
+
+    .rating-selected-high {
+      background-color: #ecfdf5 !important;
+      border-color: #059669 !important;
+      box-shadow: inset 0 0 0 2px #059669;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Print optimization */
+    @media print {
+      body {
+        background: #ffffff !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-only {
+        display: block !important;
+      }
+      .print-break-inside-avoid {
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Top Navigation & Administrator Action Bar -->
+  <header class="bg-slate-900 text-white shadow-md sticky top-0 z-30 no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-3">
+      <!-- Brand Title -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-inner">
+          <i class="fa-solid fa-chalkboard-user"></i>
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold tracking-tight flex items-center gap-2">
+            ECE-CTE Teacher Effectiveness System
+            <span class="hidden md:inline-block text-[11px] font-medium bg-indigo-500/30 text-indigo-200 border border-indigo-400/30 px-2.5 py-0.5 rounded-full">
+              Cloud Admin Portal
+            </span>
+          </h1>
+          <div class="flex items-center gap-2 text-xs text-slate-300">
+            <span>CLASS 10 Broad Areas Matrix</span>
+            <span class="text-slate-600">•</span>
+            <!-- Cloud Sync Status Pill -->
+            <span id="cloudSyncBadge" class="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-400">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              Connecting Cloud...
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Controls: Admin Directory, Observation Switcher, View Tabs & Admin Account -->
+      <div class="flex flex-wrap items-center gap-2">
+
+        <!-- My Rated Teachers Directory Trigger -->
+        <button onclick="openTeachersDirectoryModal()" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold bg-slate-800 hover:bg-slate-700 text-indigo-200 border border-slate-700 transition flex items-center gap-1.5" title="Open your Administrator Directory of all rated teachers">
+          <i class="fa-solid fa-users-rectangle text-indigo-400"></i>
+          <span>My Rated Teachers</span>
+          <span id="headerTeacherCountBadge" class="px-1.5 py-0.2 rounded-full text-[11px] bg-indigo-600 text-white font-bold">0</span>
+        </button>
+
+        <!-- Student/Teacher Profile Selector -->
+        <div class="flex items-center bg-slate-800 rounded-lg p-1 border border-slate-700">
+          <select id="profileSelector" onchange="switchObservationProfile(this.value)" class="bg-slate-900 text-white text-xs sm:text-sm rounded-md px-2.5 py-1 border border-slate-700 focus:outline-none focus:border-indigo-500 max-w-[180px] sm:max-w-[220px] truncate">
+          </select>
+          <button onclick="createNewObservationProfile()" title="New Teacher Observation under your Admin Profile" class="ml-1 px-2.5 py-1 text-xs bg-indigo-600 hover:bg-indigo-500 text-white rounded-md font-medium transition flex items-center gap-1">
+            <i class="fa-solid fa-plus"></i> <span class="hidden sm:inline">New</span>
+          </button>
+          <button onclick="promptDeleteCurrentProfile()" title="Delete Current Observation" class="ml-1 px-2 py-1 text-xs bg-slate-700 hover:bg-red-600 text-slate-200 hover:text-white rounded-md transition">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </div>
+
+        <!-- View Mode Tabs -->
+        <div class="flex bg-slate-800 rounded-lg p-1 border border-slate-700">
+          <button id="tabBtnMatrix" onclick="setMainView('matrix')" class="px-2.5 py-1 rounded-md text-xs sm:text-sm font-semibold bg-indigo-600 text-white transition flex items-center gap-1.5">
+            <i class="fa-solid fa-table-cells"></i> <span class="hidden sm:inline">Matrix</span>
+          </button>
+          <button id="tabBtnReport" onclick="setMainView('report')" class="px-2.5 py-1 rounded-md text-xs sm:text-sm font-semibold text-slate-300 hover:text-white transition flex items-center gap-1.5">
+            <i class="fa-solid fa-file-signature"></i> <span class="hidden sm:inline">Summary &amp; Goals</span>
+          </button>
+        </div>
+
+        <!-- Edit Rubric Text Modal Trigger -->
+        <button onclick="openRubricEditorModal()" class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-400/30 transition flex items-center gap-1" title="Customize rubric descriptors for your Admin Profile">
+          <i class="fa-solid fa-pen-to-square"></i> <span class="hidden xl:inline">Rubric Text</span>
+        </button>
+
+        <!-- Active Administrator Profile Badge & Auth Trigger -->
+        <button onclick="openAdminAuthModal()" class="flex items-center gap-2 pl-2 pr-3 py-1 rounded-xl bg-indigo-950/90 hover:bg-indigo-900 border border-indigo-500/40 transition text-left" title="Switch Administrator Account or Sign Out">
+          <div id="adminAvatarBadge" class="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white font-bold text-xs shadow-xs">
+            AD
+          </div>
+          <div class="hidden sm:block leading-tight">
+            <div id="headerAdminName" class="text-xs font-bold text-white truncate max-w-[130px]">
+              Sign In Admin
+            </div>
+            <div id="headerAdminRole" class="text-[10px] text-indigo-300 truncate max-w-[130px]">
+              Not Logged In
+            </div>
+          </div>
+          <i class="fa-solid fa-chevron-down text-[10px] text-indigo-300 ml-0.5"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Active Administrator Banner Strip -->
+  <div class="bg-indigo-950 text-indigo-100 border-b border-indigo-900/80 text-xs py-2 px-4 sm:px-6 lg:px-8 no-print">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="inline-flex items-center gap-1.5 font-semibold text-indigo-200">
+          <i class="fa-solid fa-user-shield text-indigo-400"></i>
+          Active Administrator Profile:
+        </span>
+        <span id="stripAdminDisplay" class="font-bold text-white bg-indigo-900/90 px-2.5 py-0.5 rounded-md border border-indigo-700">
+          Loading Administrator Profile...
+        </span>
+        <span id="stripAdminSchool" class="text-indigo-300 hidden md:inline"></span>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-[11px] text-indigo-300 hidden sm:inline">
+          Auth UID: <code id="stripFirebaseUid" class="text-indigo-200 font-mono text-[10px] bg-indigo-900/60 px-1.5 py-0.5 rounded">initializing...</code>
+        </span>
+        <button onclick="openTeachersDirectoryModal()" class="text-xs font-semibold text-amber-300 hover:text-amber-200 underline flex items-center gap-1">
+          <i class="fa-solid fa-folder-open"></i> View All Saved Teachers
+        </button>
+        <button onclick="openAdminAuthModal()" class="text-xs font-semibold text-indigo-300 hover:text-white underline flex items-center gap-1">
+          <i class="fa-solid fa-right-left"></i> Switch / Sign Out
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- Teacher & Observation Metadata Header Card -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5 mb-6 no-print">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2 border-b border-slate-100">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-md border border-indigo-100">
+            <i class="fa-solid fa-clipboard-user mr-1"></i> Active Teacher Observation Record
+          </span>
+          <span id="lastSavedTimestamp" class="text-xs text-slate-400">All changes auto-saved to your Admin Cloud Profile</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="duplicateCurrentProfile()" class="px-2.5 py-1 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition flex items-center gap-1" title="Duplicate this teacher observation (e.g., for follow-up observation)">
+            <i class="fa-regular fa-clone"></i> Duplicate Record
+          </button>
+          <button onclick="createNewObservationProfile()" class="px-2.5 py-1 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition flex items-center gap-1">
+            <i class="fa-solid fa-user-plus"></i> Rate Another Teacher
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
+            Student / Teacher Name
+          </label>
+          <input id="metaTeacherName" type="text" placeholder="e.g., Jordan Taylor (ECE Senior)" oninput="updateMetadata()"
+            class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none font-medium text-slate-800" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
+            Administrator / Observer
+          </label>
+          <input id="metaObserverName" type="text" placeholder="e.g., Ms. Anderson" oninput="updateMetadata()"
+            class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-slate-800" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
+            Observation Date
+          </label>
+          <input id="metaDate" type="date" oninput="updateMetadata()"
+            class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-slate-800" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
+            Classroom / Age Group
+          </label>
+          <input id="metaClassroom" type="text" placeholder="e.g., Pre-K Room B / Center Time" oninput="updateMetadata()"
+            class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-slate-800" />
+        </div>
+
+        <!-- Quick Overall Score Snapshot -->
+        <div class="bg-slate-50 rounded-xl p-3 border border-slate-200 flex items-center justify-between">
+          <div>
+            <div class="text-xs font-medium text-slate-500">Overall Mean (1–7)</div>
+            <div class="flex items-baseline gap-2 mt-0.5">
+              <span id="overallAverageScore" class="text-2xl font-extrabold text-indigo-700">—</span>
+              <span id="overallBandBadge" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">Not Rated</span>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="text-xs text-slate-500">Areas Rated</div>
+            <div id="areasCompletedCount" class="text-sm font-bold text-slate-800 mt-0.5">0 / 10</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 1: SCORING MATRIX VIEW -->
+    <div id="viewMatrix" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- Left Sidebar: 10 Broad Areas Navigation -->
+      <aside class="lg:col-span-3 space-y-4 no-print">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="bg-slate-800 text-white px-4 py-3 flex items-center justify-between">
+            <div>
+              <h2 class="text-sm font-bold tracking-wide uppercase">10 Broad Areas</h2>
+              <p class="text-[11px] text-slate-300">Select an area to rate</p>
+            </div>
+            <span class="text-xs bg-slate-700 px-2 py-0.5 rounded text-slate-200 font-medium">CLASS</span>
+          </div>
+
+          <!-- Domain Grouped Navigation List -->
+          <div id="broadAreasNav" class="divide-y divide-slate-100 max-h-[680px] overflow-y-auto">
+            <!-- Populated dynamically via JS -->
+          </div>
+        </div>
+
+        <!-- Quick Legend & Instructions -->
+        <div class="bg-indigo-50/80 rounded-2xl p-4 border border-indigo-100 text-xs text-slate-700 space-y-2">
+          <div class="font-bold text-indigo-950 flex items-center gap-1.5">
+            <i class="fa-solid fa-circle-info text-indigo-600"></i> How to Score This Matrix
+          </div>
+          <p class="leading-relaxed">
+            1. Click directly on any <strong>Low (1,2)</strong>, <strong>Mid (3,4,5)</strong>, or <strong>High (6,7)</strong> descriptor cell to select that rating judgment for each category of skill.
+          </p>
+          <p class="leading-relaxed">
+            2. Fine-tune the exact numeric score (<strong>1–7</strong>) using the number buttons inside the selected cell.
+          </p>
+          <p class="leading-relaxed">
+            3. Every rating is automatically synced to your private <strong>Administrator Cloud Profile</strong>.
+          </p>
+        </div>
+      </aside>
+
+      <!-- Right Main Area: Active Broad Area Matrix & Feedback -->
+      <section class="lg:col-span-9 space-y-6">
+
+        <!-- Active Area Controls & Summary Strip -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex flex-wrap items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <span id="activeAreaNumberBadge" class="w-9 h-9 rounded-xl bg-slate-800 text-white font-bold text-sm flex items-center justify-center">
+              3
+            </span>
+            <div>
+              <div class="flex items-center gap-2">
+                <span id="activeAreaDomainBadge" class="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-rose-100 text-rose-800">
+                  Emotional Support
+                </span>
+                <span id="activeAreaVerbatimTag" class="text-[11px] font-semibold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 flex items-center gap-1">
+                  <i class="fa-solid fa-check-circle"></i> Verbatim Matrix Loaded
+                </span>
+              </div>
+              <h2 id="activeAreaTitleTop" class="text-xl font-extrabold text-slate-900 mt-0.5">
+                Teacher Sensitivity
+              </h2>
+            </div>
+          </div>
+
+          <!-- Active Area Calculated Score & Clear Button -->
+          <div class="flex items-center gap-3">
+            <div class="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 flex items-center gap-3">
+              <div>
+                <div class="text-[11px] font-semibold uppercase text-slate-500">Area Score</div>
+                <div class="flex items-center gap-1.5">
+                  <span id="activeAreaAvgScore" class="text-lg font-extrabold text-slate-900">—</span>
+                  <span id="activeAreaBandLabel" class="text-xs font-bold px-2 py-0.5 rounded bg-slate-200 text-slate-700">Unrated</span>
+                </div>
+              </div>
+            </div>
+
+            <button onclick="openRubricEditorModal()" class="px-3 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition flex items-center gap-1.5" title="Edit categories or Low/Mid/High text for this area">
+              <i class="fa-solid fa-sliders"></i> Edit Text
+            </button>
+            <button onclick="clearCurrentAreaRatings()" class="px-3 py-2 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-xl transition flex items-center gap-1.5" title="Reset ratings for this broad area">
+              <i class="fa-solid fa-rotate-left"></i> Reset Area
+            </button>
+          </div>
+        </div>
+
+        <!-- THE AUTHENTIC SCORING MATRIX -->
+        <div class="bg-white rounded-2xl shadow-md border border-slate-300 p-4 sm:p-6 overflow-x-auto">
+
+          <!-- Broad Area Top Gray Banner -->
+          <div class="rubric-banner py-3 px-4 text-center mb-4 rounded-sm">
+            <h3 id="matrixBannerTitle" class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+              Teacher Sensitivity
+            </h3>
+          </div>
+
+          <!-- Matrix Grid Table -->
+          <div class="min-w-[760px]">
+            <!-- Column Headers Row -->
+            <div class="grid grid-cols-12 gap-0 mb-2">
+              <div class="col-span-3 pr-4 flex items-end pb-1">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Categories of Skill &amp; Indicators
+                </span>
+              </div>
+              <div class="col-span-9 grid grid-cols-3 rubric-col-header text-center py-2">
+                <div class="font-bold text-base sm:text-lg text-slate-900 border-r border-slate-400/50">
+                  Low (1,2)
+                </div>
+                <div class="font-bold text-base sm:text-lg text-slate-900 border-r border-slate-400/50">
+                  Mid (3,4,5)
+                </div>
+                <div class="font-bold text-base sm:text-lg text-slate-900">
+                  High (6,7)
+                </div>
+              </div>
+            </div>
+
+            <!-- Matrix Rows Container -->
+            <div id="matrixRowsContainer" class="divide-y divide-slate-200">
+              <!-- Populated dynamically with exact verbatim text -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Observer Feedback & Student Goal-Setting Integration for Active Broad Area -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+            <div>
+              <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                <i class="fa-solid fa-comments text-indigo-600"></i>
+                Observer Feedback &amp; ECE-CTE Student Reflection Link (<span id="feedbackAreaName">Teacher Sensitivity</span>)
+              </h3>
+              <p class="text-xs text-slate-500">
+                Record concrete classroom examples observed during this session to help the student form their strengths-based or growth goals.
+              </p>
+            </div>
+            <button onclick="insertSelectedDescriptorsIntoFeedback()" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition flex items-center gap-1.5">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Insert Selected Rubric Text
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                Administrator / Observer Feedback Notes (CLASS Connection)
+              </label>
+              <textarea id="areaObserverNotes" rows="4" oninput="saveAreaNotes()"
+                placeholder="Write specific observations for this dimension (e.g., 'During center time, you noticed right away when Leo was frustrated with the puzzle and offered calm, individualized support...')"
+                class="w-full p-3 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none leading-relaxed"></textarea>
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                Student Reflection / Action Goal for This Area
+              </label>
+              <textarea id="areaStudentGoal" rows="4" oninput="saveAreaNotes()"
+                placeholder="Student combines their self-reflection + your CLASS feedback into an actionable goal statement..."
+                class="w-full p-3 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none leading-relaxed"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Prev / Next Broad Area Bottom Navigation -->
+        <div class="flex items-center justify-between pt-2 no-print">
+          <button id="btnPrevArea" onclick="navigateArea(-1)" class="px-4 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold text-sm shadow-sm transition flex items-center gap-2">
+            <i class="fa-solid fa-arrow-left"></i> Previous Area
+          </button>
+          <button onclick="setMainView('report')" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-sm transition flex items-center gap-2">
+            View Full Summary &amp; Goal Assignment <i class="fa-solid fa-file-lines"></i>
+          </button>
+          <button id="btnNextArea" onclick="navigateArea(1)" class="px-4 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold text-sm shadow-sm transition flex items-center gap-2">
+            Next Area <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+
+      </section>
+    </div>
+
+    <!-- VIEW 2: SUMMARY REPORT & ECE-CTE GOAL SETTING SHEET -->
+    <div id="viewReport" class="hidden space-y-6">
+
+      <!-- Report Action Bar (Hidden when printing) -->
+      <div class="bg-indigo-900 text-white rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 no-print shadow-md">
+        <div>
+          <h2 class="text-lg font-bold flex items-center gap-2">
+            <i class="fa-solid fa-clipboard-check text-indigo-300"></i>
+            Teacher Effectiveness Summary &amp; ECE-CTE Goal-Setting Portfolio
+          </h2>
+          <p class="text-xs text-indigo-200 mt-0.5">
+            Displays all rated categories, exact verbatim rubric descriptors, observer CLASS feedback, and the student's Strengths &amp; Growth Goal assignment.
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="copyReportTextToClipboard()" class="px-3.5 py-2 rounded-xl bg-indigo-700 hover:bg-indigo-600 text-white text-xs sm:text-sm font-semibold transition flex items-center gap-1.5 border border-indigo-500">
+            <i class="fa-regular fa-copy"></i> Copy Plain Text Summary
+          </button>
+          <button onclick="window.print()" class="px-4 py-2 rounded-xl bg-white text-indigo-950 hover:bg-indigo-50 text-xs sm:text-sm font-bold transition flex items-center gap-1.5 shadow">
+            <i class="fa-solid fa-print"></i> Print / Save as PDF
+          </button>
+          <button onclick="setMainView('matrix')" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-medium transition">
+            Back to Matrix
+          </button>
+        </div>
+      </div>
+
+      <!-- Printable Document Sheet -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-8">
+
+        <!-- Document Header -->
+        <div class="border-b-2 border-slate-800 pb-5 flex flex-wrap justify-between items-start gap-4">
+          <div>
+            <div class="text-xs font-bold uppercase tracking-widest text-indigo-600">
+              Early Childhood Education (ECE-CTE) • CLASS Observation &amp; Reflection
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1" id="reportHeaderTeacher">
+              Student / Teacher Evaluation Report
+            </h2>
+            <p class="text-sm text-slate-600 mt-1" id="reportHeaderSub">
+              Classroom Assessment Scoring System — 10 Broad Areas of Effective Teaching
+            </p>
+          </div>
+          <div class="bg-slate-100 rounded-xl p-3.5 border border-slate-300 text-right min-w-[180px]">
+            <div class="text-xs font-bold uppercase text-slate-500">Overall Rating Mean</div>
+            <div class="text-2xl font-black text-slate-900 mt-0.5" id="reportOverallScore">—</div>
+            <div class="text-xs font-semibold text-indigo-700" id="reportOverallBand">No ratings yet</div>
+          </div>
+        </div>
+
+        <!-- Overview Grid of All 10 Broad Areas -->
+        <div>
+          <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-3">
+            10 Broad Areas of Effective Teaching — Score Overview
+          </h3>
+          <div id="reportTenAreasGrid" class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Detailed Breakdown of Rated Broad Areas (Includes Exact Verbatim Descriptors) -->
+        <div class="space-y-6">
+          <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200 pb-2">
+            Detailed Rubric Judgments &amp; Verbatim Descriptors
+          </h3>
+          <div id="reportDetailedAreasContainer" class="space-y-6">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- ECE-CTE High School Senior Goal Setting Assignment Section -->
+        <div class="border-t-2 border-slate-800 pt-6 print-break-inside-avoid">
+          <div class="bg-indigo-50/60 rounded-2xl border border-indigo-200 p-5 sm:p-6 space-y-6">
+            <div class="border-b border-indigo-200 pb-3">
+              <span class="text-xs font-bold uppercase tracking-wider text-indigo-700 bg-indigo-100 px-2.5 py-0.5 rounded-full">
+                ECE-CTE Senior Assignment
+              </span>
+              <h3 class="text-xl font-extrabold text-slate-900 mt-1">
+                Goal Setting: ECE Reflections &amp; CLASS Feedback
+              </h3>
+              <p class="text-xs sm:text-sm text-slate-600 mt-1">
+                <strong>Instructions:</strong> You have reflected on your strengths, and your instructor has given you feedback based on the CLASS tool above. Now, turn those reflections into two specific goals for your teaching practice.
+              </p>
+            </div>
+
+            <!-- Part 1: Building on Your Strengths -->
+            <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 space-y-4">
+              <h4 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-emerald-600 text-white text-xs flex items-center justify-center font-bold">1</span>
+                Part 1: Building on Your Strengths
+              </h4>
+              <p class="text-xs text-slate-600">
+                Look at your recent reflection about what energizes you and a past success. Then, look at the feedback your teacher gave you using CLASS terms (like <em>Teacher Sensitivity</em>, <em>Quality of Feedback</em>, or <em>Regard for Student Perspectives</em>).
+              </p>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">
+                    • My Strength (from my reflection on what I enjoy most / a success):
+                  </label>
+                  <textarea id="goalStrengthReflection" rows="3" oninput="saveGoalWorksheet()"
+                    placeholder="Write what energized you or went well in the classroom..."
+                    class="w-full p-2.5 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">
+                    • My Teacher's Feedback (CLASS connection):
+                  </label>
+                  <textarea id="goalTeacherFeedback" rows="3" oninput="saveGoalWorksheet()"
+                    placeholder="Summarize or paste the High/Mid CLASS indicator feedback from above..."
+                    class="w-full p-2.5 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-emerald-800 mb-1">
+                  • My Strengths-Based Goal (Combine your strength and teacher feedback into one action step):
+                </label>
+                <p class="text-[11px] text-slate-500 italic mb-1.5">
+                  Example: Because I enjoy talking with the kids, and my teacher noted my "Regard for Student Perspectives," my goal is to ask two open-ended questions to let children lead the conversation during center time.
+                </p>
+                <textarea id="goalStrengthStatement" rows="2" oninput="saveGoalWorksheet()"
+                  placeholder="Goal: Because I..., and my teacher noted..., my goal is to..."
+                  class="w-full p-2.5 text-sm rounded-lg border-2 border-emerald-300 bg-emerald-50/30 focus:ring-2 focus:ring-emerald-500 outline-none font-medium"></textarea>
+              </div>
+            </div>
+
+            <!-- Part 2: Area for Growth -->
+            <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 space-y-4">
+              <h4 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-amber-600 text-white text-xs flex items-center justify-center font-bold">2</span>
+                Part 2: Area for Growth
+              </h4>
+              <p class="text-xs text-slate-600">
+                Look at the reflection you wrote about a specific thing you want to do differently next time you are in the early childhood classroom, alongside any Low/Mid CLASS indicators above.
+              </p>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">
+                  • What I want to do differently next time:
+                </label>
+                <textarea id="goalGrowthReflection" rows="2" oninput="saveGoalWorksheet()"
+                  placeholder="Describe what you decided to do differently next time you go into the classroom..."
+                  class="w-full p-2.5 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-amber-800 mb-1">
+                  • My Growth Goal (Turn this into a specific action step for next time):
+                </label>
+                <p class="text-[11px] text-slate-500 italic mb-1.5">
+                  Example: Next time, I want to handle transitions better. My goal is to use a 2-minute warning song before cleanup time so children know what to expect.
+                </p>
+                <textarea id="goalGrowthStatement" rows="2" oninput="saveGoalWorksheet()"
+                  placeholder="Goal: Next time, I will..."
+                  class="w-full p-2.5 text-sm rounded-lg border-2 border-amber-300 bg-amber-50/30 focus:ring-2 focus:ring-amber-500 outline-none font-medium"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 1: ADMINISTRATOR AUTHENTICATION & PROFILE SWITCHER (CLOUD)      -->
+  <!-- ===================================================================== -->
+  <div id="adminAuthModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-xs z-50 hidden items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-2xl w-full max-h-[92vh] flex flex-col overflow-hidden">
+      <!-- Modal Header -->
+      <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white text-lg font-bold">
+            <i class="fa-solid fa-user-lock"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold">Administrator Cloud Account &amp; Log-In</h3>
+            <p class="text-xs text-slate-300">Each administrator has an isolated cloud portfolio of rated teachers &amp; rubrics</p>
+          </div>
+        </div>
+        <button onclick="closeAdminAuthModal()" class="text-slate-400 hover:text-white text-xl px-2">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Current Logged-In Admin Banner (If signed in) -->
+      <div id="authModalCurrentAdminBox" class="bg-indigo-50 border-b border-indigo-100 px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div id="modalCurrentAdminInitials" class="w-10 h-10 rounded-xl bg-indigo-600 text-white font-bold flex items-center justify-center text-sm">
+            SA
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span id="modalCurrentAdminName" class="font-bold text-slate-900 text-sm">Ms. Sarah Anderson</span>
+              <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">Active Session</span>
+            </div>
+            <div id="modalCurrentAdminMeta" class="text-xs text-slate-600">anderson@ece-cte.edu • Lead ECE-CTE Instructor</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="closeAdminAuthModal(); openTeachersDirectoryModal();" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition">
+            My Teachers
+          </button>
+          <button onclick="signOutAdministrator()" class="px-3 py-1.5 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-800 text-xs font-semibold transition flex items-center gap-1">
+            <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabs: Sign In / Create New Admin Account / Registered Admins -->
+      <div class="bg-slate-100 px-6 pt-3 border-b border-slate-200 flex gap-2">
+        <button id="authTabSignIn" onclick="switchAuthTab('signin')" class="px-4 py-2 rounded-t-xl text-xs sm:text-sm font-bold bg-white text-indigo-700 border-t border-x border-slate-200">
+          <i class="fa-solid fa-right-to-bracket mr-1"></i> Administrator Sign In
+        </button>
+        <button id="authTabSignUp" onclick="switchAuthTab('signup')" class="px-4 py-2 rounded-t-xl text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900">
+          <i class="fa-solid fa-user-plus mr-1"></i> Create Admin Account
+        </button>
+        <button id="authTabDirectory" onclick="switchAuthTab('accounts')" class="px-4 py-2 rounded-t-xl text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900">
+          <i class="fa-solid fa-users-gear mr-1"></i> Saved Admin Profiles (<span id="savedAdminsCountBadge">0</span>)
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 overflow-y-auto space-y-5 flex-1">
+
+        <!-- Auth Error / Status Alert Box -->
+        <div id="authModalAlertBox" class="hidden rounded-xl p-3 text-xs font-semibold border"></div>
+
+        <!-- TAB 1: SIGN IN -->
+        <div id="authPanelSignIn" class="space-y-4">
+          <div class="grid grid-cols-1 gap-4">
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
+                Administrator Email or Username
+              </label>
+              <input id="loginAdminEmail" type="text" placeholder="e.g., sanderson@school.edu"
+                class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
+                Password / PIN
+              </label>
+              <input id="loginAdminPassword" type="password" placeholder="Enter your administrator password"
+                onkeydown="if(event.key==='Enter') handleAdminSignIn()"
+                class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none" />
+            </div>
+            <button onclick="handleAdminSignIn()" class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow transition flex items-center justify-center gap-2">
+              <i class="fa-solid fa-lock-open"></i> Sign In to Administrator Portfolio
+            </button>
+          </div>
+
+          <!-- Instant Demo Administrator Quick-Login Cards -->
+          <div class="pt-4 border-t border-slate-200">
+            <div class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5 flex items-center justify-between">
+              <span>Quick One-Click Demo Administrator Accounts</span>
+              <span class="text-[11px] font-normal text-slate-400">Separate cloud teacher lists</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button onclick="quickDemoAdminLogin('anderson')" class="p-3 rounded-xl border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/40 text-left transition flex items-center gap-3 group">
+                <div class="w-9 h-9 rounded-lg bg-indigo-100 text-indigo-700 group-hover:bg-indigo-600 group-hover:text-white font-bold text-xs flex items-center justify-center transition">
+                  SA
+                </div>
+                <div class="min-w-0">
+                  <div class="text-xs font-bold text-slate-900 truncate">Ms. Sarah Anderson</div>
+                  <div class="text-[11px] text-slate-500 truncate">Lead ECE-CTE Instructor</div>
+                </div>
+              </button>
+              <button onclick="quickDemoAdminLogin('vance')" class="p-3 rounded-xl border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50/40 text-left transition flex items-center gap-3 group">
+                <div class="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-700 group-hover:bg-emerald-600 group-hover:text-white font-bold text-xs flex items-center justify-center transition">
+                  MV
+                </div>
+                <div class="min-w-0">
+                  <div class="text-xs font-bold text-slate-900 truncate">Dr. Marcus Vance</div>
+                  <div class="text-[11px] text-slate-500 truncate">Early Childhood Program Director</div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: CREATE NEW ADMINISTRATOR ACCOUNT -->
+        <div id="authPanelSignUp" class="hidden space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
+                Full Name &amp; Title *
+              </label>
+              <input id="regAdminName" type="text" placeholder="e.g., Mrs. Elena Rostova"
+                class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
+                Role / Position
+              </label>
+              <input id="regAdminRole" type="text" placeholder="e.g., ECE-CTE Clinical Supervisor"
+                class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
+                Email or Username *
+              </label>
+              <input id="regAdminEmail" type="text" placeholder="e.g., erostova@district.edu"
+                class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
+                School / CTE Center
+              </label>
+              <input id="regAdminSchool" type="text" placeholder="e.g., Valley Career & Tech Center"
+                class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
+                Create Password / PIN *
+              </label>
+              <input id="regAdminPassword" type="password" placeholder="At least 4 characters"
+                class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
+                Confirm Password / PIN *
+              </label>
+              <input id="regAdminPasswordConfirm" type="password" placeholder="Re-enter password"
+                onkeydown="if(event.key==='Enter') handleAdminSignUp()"
+                class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none" />
+            </div>
+          </div>
+
+          <button onclick="handleAdminSignUp()" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-cloud-arrow-up"></i> Create Cloud Administrator Account
+          </button>
+        </div>
+
+        <!-- TAB 3: REGISTERED CLOUD ADMIN ACCOUNTS LIST -->
+        <div id="authPanelAccounts" class="hidden space-y-3">
+          <p class="text-xs text-slate-500">
+            Select any registered administrator profile below to sign in to their isolated teacher observation portfolio:
+          </p>
+          <div id="registeredAdminsListContainer" class="space-y-2 max-h-72 overflow-y-auto">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="bg-slate-50 border-t border-slate-200 px-6 py-3 flex items-center justify-between text-xs text-slate-500">
+        <span><i class="fa-solid fa-shield-halved text-indigo-600 mr-1"></i> Backed by Firebase Auth &amp; Cloud Firestore</span>
+        <button onclick="closeAdminAuthModal()" class="px-4 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 font-semibold">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 2: MY RATED TEACHERS DIRECTORY (ADMIN PORTFOLIO DASHBOARD)      -->
+  <!-- ===================================================================== -->
+  <div id="teachersDirectoryModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-xs z-50 hidden items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-5xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+      <!-- Header -->
+      <div class="bg-slate-900 text-white px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-indigo-500/30 text-indigo-200 border border-indigo-400/30">
+              Administrator Cloud Portfolio
+            </span>
+            <span id="dirAdminOwnerName" class="text-xs text-emerald-300 font-semibold"></span>
+          </div>
+          <h3 class="text-lg font-bold mt-0.5 flex items-center gap-2">
+            <i class="fa-solid fa-users-rectangle text-indigo-400"></i>
+            My Rated Teachers &amp; Observation Directory
+          </h3>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="createNewObservationProfile(); closeTeachersDirectoryModal();" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition flex items-center gap-1.5 shadow">
+            <i class="fa-solid fa-user-plus"></i> + New Teacher Evaluation
+          </button>
+          <button onclick="closeTeachersDirectoryModal()" class="text-slate-400 hover:text-white text-xl px-2">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Summary Metrics Strip -->
+      <div class="bg-slate-50 border-b border-slate-200 px-6 py-3.5 grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="bg-white p-3 rounded-xl border border-slate-200">
+          <div class="text-[11px] font-bold uppercase text-slate-400">Total Rated Teachers</div>
+          <div id="dirStatTotal" class="text-xl font-black text-slate-900 mt-0.5">0</div>
+        </div>
+        <div class="bg-white p-3 rounded-xl border border-slate-200">
+          <div class="text-[11px] font-bold uppercase text-slate-400">Cohort Mean Score</div>
+          <div id="dirStatCohortAvg" class="text-xl font-black text-indigo-700 mt-0.5">—</div>
+        </div>
+        <div class="bg-white p-3 rounded-xl border border-slate-200">
+          <div class="text-[11px] font-bold uppercase text-slate-400">High Band (6–7)</div>
+          <div id="dirStatHighCount" class="text-xl font-black text-emerald-700 mt-0.5">0</div>
+        </div>
+        <div class="bg-white p-3 rounded-xl border border-slate-200">
+          <div class="text-[11px] font-bold uppercase text-slate-400">Goal Sheets Started</div>
+          <div id="dirStatGoalsCount" class="text-xl font-black text-amber-700 mt-0.5">0</div>
+        </div>
+      </div>
+
+      <!-- Search & Filter Bar -->
+      <div class="px-6 py-3 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 bg-white">
+        <div class="relative flex-1 min-w-[220px]">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-2.5 text-slate-400 text-xs"></i>
+          <input id="dirSearchInput" type="text" oninput="renderTeachersDirectoryList()" placeholder="Search by teacher name, classroom, or date..."
+            class="w-full pl-9 pr-3 py-1.5 text-xs sm:text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none" />
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-semibold text-slate-500">Filter Band:</span>
+          <select id="dirFilterBand" onchange="renderTeachersDirectoryList()" class="text-xs sm:text-sm rounded-xl border border-slate-300 px-3 py-1.5 bg-white outline-none">
+            <option value="ALL">All Ratings</option>
+            <option value="High">High (6,7)</option>
+            <option value="Mid">Mid (3,4,5)</option>
+            <option value="Low">Low (1,2)</option>
+            <option value="Unrated">Unrated</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Directory List Body -->
+      <div id="teachersDirectoryListContainer" class="p-6 overflow-y-auto space-y-3 flex-1 bg-slate-50/50">
+        <!-- Populated dynamically -->
+      </div>
+
+      <!-- Footer: Export / Import JSON & Close -->
+      <div class="bg-slate-100 border-t border-slate-200 px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="exportAdminProfilesToJson()" class="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs font-semibold transition flex items-center gap-1.5">
+            <i class="fa-solid fa-download text-indigo-600"></i> Export My Cloud Teachers (JSON)
+          </button>
+          <label class="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer">
+            <i class="fa-solid fa-file-import text-emerald-600"></i> Import Teachers JSON
+            <input type="file" accept=".json" onchange="importAdminProfilesFromJson(event)" class="hidden" />
+          </label>
+        </div>
+        <button onclick="closeTeachersDirectoryModal()" class="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold">
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 3: CUSTOMIZE / PASTE RUBRIC MATRIX TEXT                         -->
+  <!-- ===================================================================== -->
+  <div id="rubricEditorModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-5xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+      <!-- Modal Header -->
+      <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
+        <div>
+          <h3 class="text-lg font-bold flex items-center gap-2">
+            <i class="fa-solid fa-table-list text-amber-400"></i>
+            Customize Scoring Matrix Text — <span id="editorModalAreaName" class="text-indigo-300">Teacher Sensitivity</span>
+          </h3>
+          <p class="text-xs text-slate-300">
+            Saved directly to your Administrator Cloud Profile. Edit Categories of Skill, indicators, and Low/Mid/High descriptors.
+          </p>
+        </div>
+        <button onclick="closeRubricEditorModal()" class="text-slate-400 hover:text-white text-xl px-2">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 overflow-y-auto space-y-6 flex-1" id="editorModalRowsContainer">
+        <!-- Populated dynamically -->
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="bg-slate-50 border-t border-slate-200 px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <button onclick="addEditorCategoryRow()" class="px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-xs border border-indigo-200 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-plus"></i> Add Category of Skill Row
+          </button>
+          <button onclick="restoreDefaultAreaRubric()" class="px-3.5 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs transition flex items-center gap-1.5">
+            <i class="fa-solid fa-rotate"></i> Restore Default Rubric for This Area
+          </button>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="closeRubricEditorModal()" class="px-4 py-2 rounded-xl bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold text-xs">
+            Cancel
+          </button>
+          <button onclick="saveCustomRubricChanges()" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow transition flex items-center gap-1.5">
+            <i class="fa-solid fa-floppy-disk"></i> Save Matrix Text to Cloud
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 4: CUSTOM CONFIRMATION DIALOG (NO BROWSER ALERT/CONFIRM)        -->
+  <!-- ===================================================================== -->
+  <div id="confirmDialogModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-md w-full p-6 space-y-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-lg font-bold shrink-0">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div>
+          <h4 id="confirmDialogTitle" class="text-base font-bold text-slate-900">Confirm Action</h4>
+          <p id="confirmDialogMessage" class="text-xs text-slate-600 mt-0.5">Are you sure you want to proceed?</p>
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-2 pt-2">
+        <button onclick="closeConfirmDialog()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold">
+          Cancel
+        </button>
+        <button id="confirmDialogActionBtn" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow">
+          Confirm Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- APPLICATION LOGIC & FIREBASE AUTH / FIRESTORE INTEGRATION             -->
+  <!-- ===================================================================== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import {
+      getAuth,
+      signInAnonymously,
+      signInWithCustomToken,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      setDoc,
+      deleteDoc,
+      onSnapshot,
+      collection
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    /***********************************************************************
+     * 1. DEFAULT 10 BROAD AREAS RUBRIC DATA (CLASS FRAMEWORK)
+     * Area #3 ("Teacher Sensitivity") preserves 100% exact verbatim text.
+     ***********************************************************************/
+    const DEFAULT_RUBRIC_AREAS = [
+      {
+        id: 'positive_climate',
+        number: 1,
+        title: 'Positive Climate',
+        domain: 'Emotional Support',
+        isVerbatimUploaded: false,
+        categories: [
+          {
+            id: 'pc_relationships',
+            name: 'Relationships',
+            bullets: [
+              'Physical proximity',
+              'Shared activities',
+              'Peer assistance',
+              'Matched affect',
+              'Social conversation'
+            ],
+            low: 'There are few, if any, indications that the teacher and students enjoy warm, supportive relationships with one another.',
+            mid: 'There are some indications that the teacher and students enjoy warm, supportive relationships with one another, either between the teacher and students or among the students.',
+            high: 'There are many indications that the teacher and students enjoy warm, supportive relationships with one another.'
+          },
+          {
+            id: 'pc_affect',
+            name: 'Positive Affect',
+            bullets: [
+              'Smiling',
+              'Laughter',
+              'Enthusiasm'
+            ],
+            low: 'The teacher and students display flat or negative affect, and there are rarely instances of smiling, laughter, or enthusiasm.',
+            mid: 'The teacher and students sometimes display positive affect, such as smiling, laughter, or enthusiasm, though it may not be consistent across the observation.',
+            high: 'The teacher and students consistently display positive affect, including frequent smiling, laughter, and enthusiasm.'
+          },
+          {
+            id: 'pc_communications',
+            name: 'Positive Communications',
+            bullets: [
+              'Verbal affection',
+              'Physical affection',
+              'Positive expectations'
+            ],
+            low: 'The teacher rarely communicates positive expectations or verbal/physical affection toward students.',
+            mid: 'The teacher sometimes communicates positive expectations or verbal/physical affection toward students.',
+            high: 'The teacher frequently communicates positive expectations and warm verbal or physical affection toward students.'
+          },
+          {
+            id: 'pc_respect',
+            name: 'Respect',
+            bullets: [
+              'Eye contact',
+              'Warm, calm voice',
+              'Respectful language',
+              'Cooperation and/or sharing'
+            ],
+            low: 'The teacher and students rarely demonstrate respect for one another.',
+            mid: 'The teacher and students sometimes demonstrate respect for one another, though it may not be consistent.',
+            high: 'The teacher and students consistently demonstrate respect for one another through warm tone, eye contact, and respectful language.'
+          }
+        ]
+      },
+      {
+        id: 'negative_climate',
+        number: 2,
+        title: 'Negative Climate',
+        domain: 'Emotional Support',
+        isVerbatimUploaded: false,
+        categories: [
+          {
+            id: 'nc_negativity',
+            name: 'Negative Affect',
+            bullets: [
+              'Irritability',
+              'Anger',
+              'Harsh voice',
+              'Peer aggression',
+              'Disconnected or escalating negativity'
+            ],
+            low: 'The teacher and students do not display strong negative affect and only rarely, if ever, display mild negativity. (Note: Low Negative Climate is desirable, or customize to match your sheet.)',
+            mid: 'The teacher and/or students display mild negativity occasionally during the observation.',
+            high: 'The teacher and/or students consistently display frustration, irritability, or harsh voice during interactions.'
+          },
+          {
+            id: 'nc_punitive',
+            name: 'Punitive Control',
+            bullets: [
+              'Yelling',
+              'Threats',
+              'Physical control',
+              'Harsh punishment'
+            ],
+            low: 'The teacher does not yell, threaten, or use punitive control with students.',
+            mid: 'The teacher occasionally uses mild threats or punitive control to manage student behavior.',
+            high: 'The teacher frequently uses yelling, threats, or punitive control with students.'
+          },
+          {
+            id: 'nc_sarcasm',
+            name: 'Sarcasm/Disrespect',
+            bullets: [
+              'Sarcastic voice/statement',
+              'Teasing',
+              'Humiliation'
+            ],
+            low: 'The teacher and students do not use sarcastic or disrespectful language.',
+            mid: 'The teacher or students occasionally use teasing or mildly disrespectful comments.',
+            high: 'The teacher or students repeatedly use sarcasm, teasing, or disrespectful communication.'
+          },
+          {
+            id: 'nc_severe',
+            name: 'Severe Negativity',
+            bullets: [
+              'Victimization',
+              'Bullying',
+              'Physical punishment'
+            ],
+            low: 'There are no instances of severe negativity between the teacher and students or among peers.',
+            mid: 'Ambiguous or isolated conflict occurs that is slow to be resolved.',
+            high: 'There are observable instances of severe negativity, bullying, or victimization.'
+          }
+        ]
+      },
+      {
+        id: 'teacher_sensitivity',
+        number: 3,
+        title: 'Teacher Sensitivity',
+        domain: 'Emotional Support',
+        isVerbatimUploaded: true,
+        categories: [
+          {
+            id: 'ts_awareness',
+            name: 'Awareness',
+            bullets: [
+              'Anticipates problems and plans appropriately',
+              'Notices lack of understanding and/or difficulties'
+            ],
+            low: 'The teacher consistently fails to be aware of students who need extra support, assistance, or attention.',
+            mid: 'The teacher is sometimes aware of students who need extra support, assistance, or attention.',
+            high: 'The teacher is consistently aware of students who need extra support, assistance, or attention.'
+          },
+          {
+            id: 'ts_responsiveness',
+            name: 'Responsiveness',
+            bullets: [
+              'Acknowledges emotions',
+              'Provides comfort and assistance',
+              'Provides individualized support'
+            ],
+            low: 'The teacher is unresponsive to or dismissive of students and provides the same level of assistance to all students, regardless of their individual needs.',
+            mid: 'The teacher is responsive to students sometimes but at other times is more dismissive or unresponsive, matching her support to the needs and abilities of some students but not others.',
+            high: 'The teacher is consistently responsive to students and matches her support to their needs and abilities.'
+          },
+          {
+            id: 'ts_addresses_problems',
+            name: 'Addresses Problems',
+            bullets: [
+              'Helps in an effective and timely manner',
+              'Helps resolve problems'
+            ],
+            low: "The teacher is ineffective at addressing students' problems and concerns.",
+            mid: "The teacher is sometimes effective at addressing students' problems and concerns.",
+            high: "The teacher is consistently effective at addressing students' problems and concerns."
+          },
+          {
+            id: 'ts_student_comfort',
+            name: 'Student Comfort',
+            bullets: [
+              'Seeks support and guidance',
+              'Freely participates',
+              'Takes risks'
+            ],
+            low: 'The students rarely seek support, share their ideas with, or respond to questions from the teacher.',
+            mid: 'The students sometimes seek support from, share their ideas with, or respond to questions from the teacher.',
+            high: 'The students appear comfortable seeking support from, sharing their ideas with, and responding freely to the teacher.'
+          }
+        ]
+      },
+      {
+        id: 'regard_for_student_perspectives',
+        number: 4,
+        title: 'Regard for Student Perspectives',
+        domain: 'Emotional Support',
+        isVerbatimUploaded: false,
+        categories: [
+          {
+            id: 'rsp_flexibility',
+            name: 'Flexibility and Student Focus',
+            bullets: [
+              'Shows flexibility',
+              'Incorporates students\' ideas',
+              'Follows lead'
+            ],
+            low: 'The teacher is rigid, inflexible, and controlling in her plans and/or rarely follows the students\' lead.',
+            mid: 'The teacher may follow the students\' lead during some periods and be more controlling during others.',
+            high: 'The teacher is flexible in her plans, goes along with students\' ideas, and organizes instruction around students\' interests.'
+          },
+          {
+            id: 'rsp_autonomy',
+            name: 'Support for Autonomy and Leadership',
+            bullets: [
+              'Allows choice',
+              'Allows students to lead lessons',
+              'Gives students responsibility'
+            ],
+            low: 'The teacher does not support student autonomy and leadership by failing to provide opportunities for student choice or responsibility.',
+            mid: 'The teacher sometimes provides support for student autonomy and leadership.',
+            high: 'The teacher consistently supports student autonomy and provides meaningful leadership opportunities.'
+          },
+          {
+            id: 'rsp_expression',
+            name: 'Student Expression',
+            bullets: [
+              'Encourages student talk',
+              'Elicits ideas and/or perspectives'
+            ],
+            low: 'There are few opportunities for student talk and expression; the teacher controls most conversations.',
+            mid: 'There are some opportunities for students to talk and express their ideas.',
+            high: 'The teacher consistently encourages student talk and elicits students\' ideas and perspectives.'
+          },
+          {
+            id: 'rsp_movement',
+            name: 'Restriction of Movement',
+            bullets: [
+              'Allows movement',
+              'Is not rigid'
+            ],
+            low: 'The teacher is controlling of students\' movement and placement during activities.',
+            mid: 'The teacher is somewhat controlling of students\' movement, or allows movement only at certain times.',
+            high: 'The teacher is not rigid about student movement and allows reasonable freedom of movement for children.'
+          }
+        ]
+      },
+      {
+        id: 'behavior_management',
+        number: 5,
+        title: 'Behavior Management',
+        domain: 'Classroom Organization',
+        isVerbatimUploaded: false,
+        categories: [
+          {
+            id: 'bm_expectations',
+            name: 'Clear Behavior Expectations',
+            bullets: [
+              'Clear expectations',
+              'Consistency',
+              'Clarity of rules'
+            ],
+            low: 'Rules and expectations are absent, unclear, or inconsistently enforced.',
+            mid: 'Rules and expectations may be stated, but they are inconsistently enforced.',
+            high: 'Rules and expectations for behavior are clear and consistently promoted.'
+          },
+          {
+            id: 'bm_proactive',
+            name: 'Proactive',
+            bullets: [
+              'Anticipates problem behavior or escalation',
+              'Low reactivity',
+              'Monitors'
+            ],
+            low: 'The teacher is reactive, and monitoring is absent or ineffective.',
+            mid: 'The teacher uses a mix of proactive and reactive responses; sometimes monitors and anticipates problems.',
+            high: 'The teacher is consistently proactive, monitors the classroom effectively, and prevents problems from developing.'
+          },
+          {
+            id: 'bm_redirection',
+            name: 'Redirection of Misbehavior',
+            bullets: [
+              'Effective reduction of misbehavior',
+              'Attention to positive',
+              'Uses subtle cues to redirect',
+              'Efficient'
+            ],
+            low: 'Attempts to redirect misbehavior are ineffective and/or take precious time away from learning.',
+            mid: 'Some attempts to redirect misbehavior are successful, particularly when focusing on positives and using subtle cues.',
+            high: 'The teacher effectively redirects misbehavior by focusing on positives and making use of subtle cues.'
+          },
+          {
+            id: 'bm_student_behavior',
+            name: 'Student Behavior',
+            bullets: [
+              'Frequent compliance',
+              'Little aggression and defiance'
+            ],
+            low: 'There is frequent misbehavior, defiance, or aggression among students.',
+            mid: 'There are periodic episodes of misbehavior, though students generally comply with expectations.',
+            high: 'There are few, if any, instances of student misbehavior in the classroom.'
+          }
+        ]
+      },
+      {
+        id: 'productivity',
+        number: 6,
+        title: 'Productivity',
+        domain: 'Classroom Organization',
+        isVerbatimUploaded: false,
+        categories: [
+          {
+            id: 'prod_maximizing',
+            name: 'Maximizing Learning Time',
+            bullets: [
+              'Provision of activities',
+              'Choice when finished',
+              'Few disruptions',
+              'Effective completion of managerial tasks',
+              'Pacing'
+            ],
+            low: 'Few activities are provided, and/or vast amounts of time are lost to disruptions and managerial tasks.',
+            mid: 'Most of the time the teacher provides activities for students, though some learning time is lost to disruptions or management.',
+            high: 'The teacher consistently provides learning activities for students and deals efficiently with disruptions and managerial tasks.'
+          },
+          {
+            id: 'prod_routines',
+            name: 'Routines',
+            bullets: [
+              'Students know what to do',
+              'Clear instructions',
+              'Little wandering'
+            ],
+            low: 'Classroom routines are unclear; students frequently do not know what is expected of them.',
+            mid: 'There is some evidence that routines exist, but students need frequent reminders.',
+            high: 'The classroom runs like a well-oiled machine; everybody knows what is expected of them and how to go about doing it.'
+          },
+          {
+            id: 'prod_transitions',
+            name: 'Transitions',
+            bullets: [
+              'Brief',
+              'Explicit follow-through',
+              'Learning opportunities within'
+            ],
+            low: 'Transitions are too long and/or too frequent, with no learning opportunities provided.',
+            mid: 'Transitions are sometimes too long, though the teacher occasionally incorporates learning signals or songs.',
+            high: 'Transitions are quick and efficient, often incorporating subtle learning opportunities.'
+          },
+          {
+            id: 'prod_preparation',
+            name: 'Preparation',
+            bullets: [
+              'Materials ready and accessible',
+              'Knows lessons'
+            ],
+            low: 'The teacher does not have materials prepared and ready for students.',
+            mid: 'The teacher is mostly prepared for activities, but takes some time away from instruction to gather materials.',
+            high: 'The teacher is fully prepared for activities and lessons with materials ready and accessible.'
+          }
+        ]
+      },
+      {
+        id: 'instructional_learning_formats',
+        number: 7,
+        title: 'Instructional Learning Formats',
+        domain: 'Classroom Organization',
+        isVerbatimUploaded: false,
+        categories: [
+          {
+            id: 'ilf_facilitation',
+            name: 'Effective Facilitation',
+            bullets: [
+              'Teacher involvement',
+              'Effective questioning',
+              'Expanding children\'s involvement'
+            ],
+            low: 'The teacher does not actively facilitate activities to draw students in or promote interest.',
+            mid: 'The teacher at times actively facilitates activities to promote interest, but at other times merely provides materials.',
+            high: 'The teacher actively facilitates students\' engagement in activities and lessons to encourage participation and expanded involvement.'
+          },
+          {
+            id: 'ilf_modalities',
+            name: 'Variety of Modalities and Materials',
+            bullets: [
+              'Range of auditory, visual, and movement opportunities',
+              'Interesting and creative materials',
+              'Hands-on opportunities'
+            ],
+            low: 'The teacher uses a limited range of modalities and materials; students rarely have hands-on interaction.',
+            mid: 'The teacher uses a variety of modalities and materials inconsistently to gain students\' interest.',
+            high: 'The teacher consistently uses a variety of modalities including auditory, visual, and movement and uses creative hands-on materials.'
+          },
+          {
+            id: 'ilf_interest',
+            name: 'Student Interest',
+            bullets: [
+              'Active participation',
+              'Listening',
+              'Focused attention'
+            ],
+            low: 'Students are uninterested and uninvolved in activities and lessons.',
+            mid: 'Students may be engaged for periods of time, or some students are engaged while others are not.',
+            high: 'Students are consistently interested and involved in activities and lessons.'
+          },
+          {
+            id: 'ilf_clarity',
+            name: 'Clarity of Learning Objectives',
+            bullets: [
+              'Advanced organizers',
+              'Summaries',
+              'Reorientation statements'
+            ],
+            low: 'The teacher makes no attempt, or unsuccessful attempts, to orient students toward learning objectives.',
+            mid: 'The teacher sometimes orients students to learning objectives, or does so clearly at some times and not others.',
+            high: 'The teacher effectively focuses students\' attention toward learning objectives through advanced organizers and reorientation statements.'
+          }
+        ]
+      },
+      {
+        id: 'concept_development',
+        number: 8,
+        title: 'Concept Development',
+        domain: 'Instructional Support',
+        isVerbatimUploaded: false,
+        categories: [
+          {
+            id: 'cd_analysis',
+            name: 'Analysis and Reasoning',
+            bullets: [
+              'Why and/or how questions',
+              'Problem solving',
+              'Prediction/experimentation',
+              'Classification/comparison',
+              'Evaluation'
+            ],
+            low: 'The teacher rarely asks questions or engages students in activities that promote analysis and reasoning.',
+            mid: 'The teacher occasionally uses discussions and activities that encourage analysis and reasoning.',
+            high: 'The teacher often uses discussions and activities that encourage analysis and reasoning, including why/how questions and problem solving.'
+          },
+          {
+            id: 'cd_creating',
+            name: 'Creating',
+            bullets: [
+              'Brainstorming',
+              'Planning',
+              'Producing'
+            ],
+            low: 'The teacher rarely provides opportunities for students to be creative or generate their own ideas and products.',
+            mid: 'The teacher sometimes provides opportunities for students to brainstorm, plan, or produce their own work.',
+            high: 'The teacher often provides opportunities for students to be creative and generate their own ideas and products.'
+          },
+          {
+            id: 'cd_integration',
+            name: 'Integration',
+            bullets: [
+              'Connects concepts',
+              'Integrates with previous knowledge'
+            ],
+            low: 'Concepts and activities are presented independent of one another and are not linked to prior learning.',
+            mid: 'The teacher sometimes links concepts and activities to one another and to previous learning.',
+            high: 'The teacher consistently links concepts and activities to one another and to previous learning.'
+          },
+          {
+            id: 'cd_real_world',
+            name: 'Connections to the Real World',
+            bullets: [
+              'Real-world applications',
+              'Related to students\' lives'
+            ],
+            low: 'The teacher makes no attempt to apply concepts to the real world or students\' actual lives.',
+            mid: 'The teacher makes some attempts to relate concepts to the real world or students\' lives.',
+            high: 'The teacher consistently relates concepts to students\' actual lives and real-world applications.'
+          }
+        ]
+      },
+      {
+        id: 'quality_of_feedback',
+        number: 9,
+        title: 'Quality of Feedback',
+        domain: 'Instructional Support',
+        isVerbatimUploaded: false,
+        categories: [
+          {
+            id: 'qf_scaffolding',
+            name: 'Scaffolding',
+            bullets: [
+              'Hints',
+              'Assistance'
+            ],
+            low: 'The teacher rarely provides scaffolding to students, simply dismissing responses as incorrect or ignoring problems.',
+            mid: 'The teacher occasionally provides scaffolding to students, such as basic hints or assistance.',
+            high: 'The teacher often scaffolds for students who are having a hard time understanding a concept or completing an activity.'
+          },
+          {
+            id: 'qf_loops',
+            name: 'Feedback Loops',
+            bullets: [
+              'Back-and-forth exchanges',
+              'Persistence by teacher',
+              'Follow-up questions'
+            ],
+            low: 'The teacher gives mostly perfunctory feedback ("good job") without sustained back-and-forth exchanges.',
+            mid: 'The teacher engages in occasional feedback loops with some back-and-forth exchanges.',
+            high: 'The teacher engages in frequent feedback loops, sustaining back-and-forth exchanges and follow-up questions to help students understand.'
+          },
+          {
+            id: 'qf_prompting',
+            name: 'Prompting Thought Processes',
+            bullets: [
+              'Asks students to explain thinking',
+              'Queries responses and actions'
+            ],
+            low: 'The teacher rarely queries students to explain their thinking or rationale.',
+            mid: 'The teacher occasionally queries students to explain their thinking or actions.',
+            high: 'The teacher often prompts students to explain their thinking and rationale for responses and actions.'
+          },
+          {
+            id: 'qf_information',
+            name: 'Providing Information',
+            bullets: [
+              'Expansion',
+              'Clarification',
+              'Specific feedback'
+            ],
+            low: 'The teacher rarely expands, clarifies, or provides specific information in response to student work.',
+            mid: 'The teacher occasionally expands, clarifies, or provides specific feedback to students.',
+            high: 'The teacher often expands, clarifies, and provides specific information so students understand why an answer is right or how to improve.'
+          },
+          {
+            id: 'qf_encouragement',
+            name: 'Encouragement and Affirmation',
+            bullets: [
+              'Recognition',
+              'Reinforcement',
+              'Student persistence'
+            ],
+            low: 'The teacher rarely recognizes or affirms student effort and persistence.',
+            mid: 'The teacher occasionally recognizes and affirms student effort.',
+            high: 'The teacher consistently provides specific encouragement and affirmation that sustains student effort and persistence.'
+          }
+        ]
+      },
+      {
+        id: 'language_modeling',
+        number: 10,
+        title: 'Language Modeling',
+        domain: 'Instructional Support',
+        isVerbatimUploaded: false,
+        categories: [
+          {
+            id: 'lm_conversations',
+            name: 'Frequent Conversations',
+            bullets: [
+              'Back-and-forth exchanges',
+              'Contingent responding',
+              'Peer conversations'
+            ],
+            low: 'There are few conversations in the classroom, or conversations are rarely contingent on students\' comments.',
+            mid: 'There are occasional back-and-forth conversations between the teacher and students or among peers.',
+            high: 'There are frequent back-and-forth conversations and contingent responding between the teacher and students and among peers.'
+          },
+          {
+            id: 'lm_open_ended',
+            name: 'Open-Ended Questions',
+            bullets: [
+              'Questions require more than a one-word response',
+              'Students respond'
+            ],
+            low: 'The majority of the teacher\'s questions are closed-ended, requiring only a one-word response.',
+            mid: 'The teacher asks a mix of closed-ended and open-ended questions.',
+            high: 'The teacher frequently asks open-ended questions that invite extended student responses.'
+          },
+          {
+            id: 'lm_repetition',
+            name: 'Repetition and Extension',
+            bullets: [
+              'Repeats',
+              'Extends/elaborates'
+            ],
+            low: 'The teacher rarely repeats or extends students\' responses.',
+            mid: 'The teacher sometimes repeats or extends students\' responses.',
+            high: 'The teacher often repeats and extends or elaborates upon students\' responses.'
+          },
+          {
+            id: 'lm_self_parallel',
+            name: 'Self- and Parallel Talk',
+            bullets: [
+              'Maps own actions with language',
+              'Maps student action with language'
+            ],
+            low: 'The teacher rarely maps her own actions or the students\' actions using language.',
+            mid: 'The teacher occasionally maps her own actions and the students\' actions through language.',
+            high: 'The teacher consistently maps her own actions and the students\' actions through rich language and description.'
+          },
+          {
+            id: 'lm_advanced',
+            name: 'Advanced Language',
+            bullets: [
+              'Variety of words',
+              'Connected to familiar words and/or ideas'
+            ],
+            low: 'The teacher does not use advanced language or connect new vocabulary to familiar concepts.',
+            mid: 'The teacher sometimes uses advanced language or new vocabulary.',
+            high: 'The teacher frequently uses a rich variety of words and connects new vocabulary to familiar words and ideas.'
+          }
+        ]
+      }
+    ];
+
+    /***********************************************************************
+     * 2. PRE-BUILT DEMO ADMINISTRATORS & SAMPLE OBSERVATIONS
+     ***********************************************************************/
+    const DEMO_ADMINS = {
+      anderson: {
+        adminId: 'admin_sarah_anderson',
+        name: 'Ms. Sarah Anderson',
+        role: 'Lead ECE-CTE Instructor',
+        school: 'Oakridge Career & Technical Center',
+        email: 'sanderson@ece-cte.edu',
+        passwordHash: 'demo_anderson'
+      },
+      vance: {
+        adminId: 'admin_marcus_vance',
+        name: 'Dr. Marcus Vance',
+        role: 'Early Childhood Program Director',
+        school: 'Metro Regional CTE Academy',
+        email: 'mvance@ece-cte.edu',
+        passwordHash: 'demo_vance'
+      }
+    };
+
+    /***********************************************************************
+     * 3. APPLICATION STATE & FIREBASE CLOUD REFERENCES
+     ***********************************************************************/
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-ece-cte-app';
+    let app = null;
+    let db = null;
+    let auth = null;
+    let firebaseUser = null;
+    let isCloudConnected = false;
+
+    // Active Logged-In Administrator Account
+    let currentAdmin = { ...DEMO_ADMINS.anderson };
+    // All registered administrators fetched from Firestore
+    let registeredAdmins = [DEMO_ADMINS.anderson, DEMO_ADMINS.vance];
+
+    // All cloud observations across administrators (filtered by currentAdmin.adminId in UI)
+    let allCloudObservations = [];
+    // Filtered observations belonging ONLY to currentAdmin.adminId
+    let observationProfiles = [];
+    // Active Rubric for currentAdmin
+    let rubricAreas = JSON.parse(JSON.stringify(DEFAULT_RUBRIC_AREAS));
+    // Map of custom rubrics per adminId
+    let cloudRubricsByAdmin = {};
+
+    let currentProfileId = null;
+    let activeAreaIndex = 2; // Default to Area #3: Teacher Sensitivity
+    let currentMainView = 'matrix';
+    let saveDebounceTimer = null;
+
+    /***********************************************************************
+     * 4. SAMPLE TEACHER OBSERVATION FACTORY
+     ***********************************************************************/
+    function createBlankProfile(teacherName = 'New ECE-CTE Student Teacher', adminObj = currentAdmin) {
+      const today = new Date().toISOString().split('T')[0];
+      return {
+        id: 'obs_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+        adminId: adminObj.adminId,
+        adminEmail: adminObj.email,
+        teacherName: teacherName,
+        observerName: adminObj.name || 'ECE-CTE Administrator',
+        date: today,
+        classroom: 'Pre-K Lab Classroom',
+        updatedAt: Date.now(),
+        ratings: {},
+        goalWorksheet: {
+          strengthReflection: '',
+          teacherFeedback: '',
+          strengthStatement: '',
+          growthReflection: '',
+          growthStatement: ''
+        }
+      };
+    }
+
+    function createSampleSeededProfileForAdmin(adminObj) {
+      const today = new Date().toISOString().split('T')[0];
+      if (adminObj.adminId === 'admin_marcus_vance') {
+        return {
+          id: 'obs_seed_vance_1',
+          adminId: adminObj.adminId,
+          adminEmail: adminObj.email,
+          teacherName: 'Taylor Brooks (ECE Senior Intern)',
+          observerName: adminObj.name,
+          date: today,
+          classroom: 'Toddler Discovery Room A',
+          updatedAt: Date.now(),
+          ratings: {
+            teacher_sensitivity: {
+              categories: {
+                ts_awareness: { band: 'high', score: 6 },
+                ts_responsiveness: { band: 'high', score: 7 },
+                ts_addresses_problems: { band: 'mid', score: 5 },
+                ts_student_comfort: { band: 'high', score: 6 }
+              },
+              observerNotes: 'Taylor demonstrated strong awareness during morning circle, noticing right away when a child needed comfort and offering individualized reassurance.',
+              studentGoal: 'Continue scanning all learning centers during transition times so quieter children receive timely support.'
+            },
+            positive_climate: {
+              categories: {
+                pc_relationships: { band: 'high', score: 7 },
+                pc_affect: { band: 'high', score: 6 },
+                pc_communications: { band: 'high', score: 6 },
+                pc_respect: { band: 'high', score: 7 }
+              },
+              observerNotes: 'Warm tone of voice and frequent eye-level interaction with children.',
+              studentGoal: ''
+            }
+          },
+          goalWorksheet: {
+            strengthReflection: 'I love sitting at eye level with toddlers during block play and talking with them about what they are building.',
+            teacherFeedback: 'Dr. Vance highlighted my High ratings in Teacher Sensitivity (Responsiveness: 7) and Positive Climate (Relationships: 7).',
+            strengthStatement: 'Because I connect well at eye level and Dr. Vance noted my strong Responsiveness, my goal is to model parallel talk with at least 3 children during free play.',
+            growthReflection: 'I want to help children transition from blocks to handwashing with less waiting time.',
+            growthStatement: 'Next time, I will use a picture schedule cue 2 minutes before cleanup so children transition smoothly.'
+          }
+        };
+      }
+
+      // Default sample for Ms. Sarah Anderson or newly created admin
+      return {
+        id: 'obs_seed_' + adminObj.adminId,
+        adminId: adminObj.adminId,
+        adminEmail: adminObj.email,
+        teacherName: 'Alex Rivera (ECE-CTE Senior)',
+        observerName: adminObj.name,
+        date: today,
+        classroom: 'Pre-K Room B / Center Time',
+        updatedAt: Date.now(),
+        ratings: {
+          teacher_sensitivity: {
+            categories: {
+              ts_awareness: { band: 'high', score: 6 },
+              ts_responsiveness: { band: 'high', score: 6 },
+              ts_addresses_problems: { band: 'mid', score: 5 },
+              ts_student_comfort: { band: 'high', score: 7 }
+            },
+            observerNotes: 'During center time, Alex noticed immediately when Maya struggled with the puzzle and provided calm, individualized scaffolding.',
+            studentGoal: 'Build on Student Comfort by inviting shy students to share their ideas during small-group story time.'
+          }
+        },
+        goalWorksheet: {
+          strengthReflection: 'I felt energized helping children express their feelings and work through puzzle challenges during center time.',
+          teacherFeedback: `${adminObj.name} noted my High ratings in Teacher Sensitivity (Awareness: 6, Responsiveness: 6, Student Comfort: 7).`,
+          strengthStatement: 'Because I enjoy supporting children during center time and my observer noted my Teacher Sensitivity, my goal is to ask two open-ended questions per center to let children lead problem-solving.',
+          growthReflection: 'I want to pace clean-up transitions more smoothly so we do not lose learning time.',
+          growthStatement: 'Next time, I will give a 2-minute transition song cue and assign specific cleanup helpers.'
+        }
+      };
+    }
+
+    /***********************************************************************
+     * 5. FIREBASE INITIALIZATION & REAL-TIME LISTENERS (RULES 1, 2, 3)
+     ***********************************************************************/
+    async function initFirebaseCloud() {
+      updateCloudBadge('connecting', 'Connecting to Cloud...');
+      try {
+        const rawConfig = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+        if (!rawConfig) {
+          // Graceful fallback to in-memory session if environment config isn't injected
+          updateCloudBadge('local', 'In-Memory Session Mode');
+          loadAdminDataIntoView();
+          return;
+        }
+
+        const firebaseConfig = typeof rawConfig === 'string' ? JSON.parse(rawConfig) : rawConfig;
+        app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+
+        // RULE 3: Authenticate FIRST before any Firestore query
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+          firebaseUser = user;
+          const uidEl = document.getElementById('stripFirebaseUid');
+          if (uidEl) {
+            uidEl.textContent = user ? user.uid : 'unauthenticated';
+          }
+          if (user) {
+            isCloudConnected = true;
+            updateCloudBadge('synced', 'Synced to Cloud');
+            await restoreLastActiveAdminSession();
+            setupFirestoreListeners();
+          }
+        });
+      } catch (err) {
+        console.error('Firebase initialization error:', err);
+        updateCloudBadge('local', 'Local Session Active');
+        loadAdminDataIntoView();
+      }
+    }
+
+    function updateCloudBadge(state, text) {
+      const badge = document.getElementById('cloudSyncBadge');
+      if (!badge) return;
+      if (state === 'synced') {
+        badge.className = 'inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-400';
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span> ${escapeHtml(text)}`;
+      } else if (state === 'saving') {
+        badge.className = 'inline-flex items-center gap-1.5 text-[11px] font-medium text-amber-300';
+        badge.innerHTML = `<i class="fa-solid fa-cloud-arrow-up animate-bounce text-[10px]"></i> ${escapeHtml(text)}`;
+      } else {
+        badge.className = 'inline-flex items-center gap-1.5 text-[11px] font-medium text-sky-300';
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-sky-400"></span> ${escapeHtml(text)}`;
+      }
+    }
+
+    // Restore which administrator profile was last active for this authenticated user
+    async function restoreLastActiveAdminSession() {
+      if (!firebaseUser || !db) return;
+      try {
+        const sessionRef = doc(db, 'artifacts', appId, 'users', firebaseUser.uid, 'adminSession', 'current');
+        const snap = await getDoc(sessionRef);
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data && data.adminId) {
+            currentAdmin = {
+              adminId: data.adminId,
+              name: data.name || 'Administrator',
+              role: data.role || 'ECE-CTE Administrator',
+              school: data.school || '',
+              email: data.email || ''
+            };
+          }
+        }
+      } catch (e) {
+        console.error('Error restoring active admin session:', e);
+      }
+    }
+
+    async function saveActiveAdminSessionToCloud() {
+      if (!firebaseUser || !db) return;
+      try {
+        const sessionRef = doc(db, 'artifacts', appId, 'users', firebaseUser.uid, 'adminSession', 'current');
+        await setDoc(sessionRef, {
+          adminId: currentAdmin.adminId,
+          name: currentAdmin.name,
+          role: currentAdmin.role,
+          school: currentAdmin.school || '',
+          email: currentAdmin.email,
+          updatedAt: Date.now()
+        });
+      } catch (e) {
+        console.error('Error saving active admin session:', e);
+      }
+    }
+
+    function setupFirestoreListeners() {
+      if (!firebaseUser || !db) return;
+
+      // 1. Listen to Registered Administrator Accounts: /artifacts/{appId}/public/data/adminAccounts
+      const adminsCol = collection(db, 'artifacts', appId, 'public', 'data', 'adminAccounts');
+      onSnapshot(
+        adminsCol,
+        (snapshot) => {
+          const loadedAdmins = {
+            [DEMO_ADMINS.anderson.adminId]: DEMO_ADMINS.anderson,
+            [DEMO_ADMINS.vance.adminId]: DEMO_ADMINS.vance
+          };
+          snapshot.forEach((docSnap) => {
+            const d = docSnap.data();
+            if (d && d.adminId) {
+              loadedAdmins[d.adminId] = d;
+            }
+          });
+          registeredAdmins = Object.values(loadedAdmins);
+          renderRegisteredAdminsList();
+        },
+        (err) => {
+          console.error('Error listening to adminAccounts:', err);
+        }
+      );
+
+      // 2. Listen to Custom Rubrics per Administrator: /artifacts/{appId}/public/data/adminRubrics
+      const rubricsCol = collection(db, 'artifacts', appId, 'public', 'data', 'adminRubrics');
+      onSnapshot(
+        rubricsCol,
+        (snapshot) => {
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            if (data && data.areasJson) {
+              try {
+                cloudRubricsByAdmin[docSnap.id] = JSON.parse(data.areasJson);
+              } catch (e) {
+                console.error('Failed to parse custom rubric JSON:', e);
+              }
+            }
+          });
+          applyActiveAdminRubric();
+          renderAll();
+        },
+        (err) => {
+          console.error('Error listening to adminRubrics:', err);
+        }
+      );
+
+      // 3. Listen to Teacher Observations across Administrators: /artifacts/{appId}/public/data/adminObservations
+      const obsCol = collection(db, 'artifacts', appId, 'public', 'data', 'adminObservations');
+      onSnapshot(
+        obsCol,
+        async (snapshot) => {
+          const list = [];
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            if (data && data.id) {
+              // Parse ratings if stored as serialized string or object
+              const parsedRatings = typeof data.ratingsJson === 'string'
+                ? JSON.parse(data.ratingsJson)
+                : (data.ratings || {});
+              list.push({
+                ...data,
+                ratings: parsedRatings,
+                goalWorksheet: data.goalWorksheet || {}
+              });
+            }
+          });
+          allCloudObservations = list;
+          await filterObservationsForCurrentAdmin();
+        },
+        (err) => {
+          console.error('Error listening to adminObservations:', err);
+        }
+      );
+    }
+
+    function applyActiveAdminRubric() {
+      if (cloudRubricsByAdmin[currentAdmin.adminId]) {
+        rubricAreas = JSON.parse(JSON.stringify(cloudRubricsByAdmin[currentAdmin.adminId]));
+      } else {
+        rubricAreas = JSON.parse(JSON.stringify(DEFAULT_RUBRIC_AREAS));
+      }
+    }
+
+    async function filterObservationsForCurrentAdmin() {
+      // Filter in JS memory (RULE 2 compliance: no compound where/orderBy in Firestore query)
+      const myProfiles = allCloudObservations
+        .filter(p => p.adminId === currentAdmin.adminId)
+        .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+      if (myProfiles.length === 0) {
+        // Seed an initial sample teacher profile for this administrator so their portfolio is ready immediately
+        const seeded = createSampleSeededProfileForAdmin(currentAdmin);
+        observationProfiles = [seeded];
+        currentProfileId = seeded.id;
+        await saveObservationProfileToCloud(seeded);
+      } else {
+        observationProfiles = myProfiles;
+        if (!currentProfileId || !observationProfiles.some(p => p.id === currentProfileId)) {
+          currentProfileId = observationProfiles[0].id;
+        }
+      }
+
+      renderAll();
+    }
+
+    async function saveObservationProfileToCloud(profile) {
+      if (!profile) return;
+      profile.adminId = currentAdmin.adminId;
+      profile.adminEmail = currentAdmin.email;
+      profile.updatedAt = Date.now();
+
+      const tsEl = document.getElementById('lastSavedTimestamp');
+      if (tsEl) {
+        const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        tsEl.textContent = `Saved to ${currentAdmin.name}'s Cloud Profile at ${nowStr}`;
+      }
+
+      if (!firebaseUser || !db) return;
+
+      updateCloudBadge('saving', 'Saving to Cloud...');
+      try {
+        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'adminObservations', profile.id);
+        await setDoc(docRef, {
+          id: profile.id,
+          adminId: profile.adminId,
+          adminEmail: profile.adminEmail || '',
+          teacherName: profile.teacherName || '',
+          observerName: profile.observerName || '',
+          date: profile.date || '',
+          classroom: profile.classroom || '',
+          updatedAt: profile.updatedAt,
+          ratingsJson: JSON.stringify(profile.ratings || {}),
+          goalWorksheet: profile.goalWorksheet || {}
+        });
+        updateCloudBadge('synced', 'Synced to Cloud');
+      } catch (e) {
+        console.error('Error saving observation profile to Firestore:', e);
+        updateCloudBadge('local', 'Saved in Session');
+      }
+    }
+
+    function scheduleSaveCurrentProfile() {
+      const profile = getCurrentProfile();
+      if (!profile) return;
+      if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
+      saveDebounceTimer = setTimeout(() => {
+        saveObservationProfileToCloud(profile);
+      }, 350);
+    }
+
+    async function saveAdminCustomRubricToCloud() {
+      cloudRubricsByAdmin[currentAdmin.adminId] = JSON.parse(JSON.stringify(rubricAreas));
+      if (!firebaseUser || !db) return;
+      updateCloudBadge('saving', 'Saving Rubric...');
+      try {
+        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'adminRubrics', currentAdmin.adminId);
+        await setDoc(docRef, {
+          adminId: currentAdmin.adminId,
+          adminName: currentAdmin.name,
+          updatedAt: Date.now(),
+          areasJson: JSON.stringify(rubricAreas)
+        });
+        updateCloudBadge('synced', 'Synced to Cloud');
+      } catch (e) {
+        console.error('Error saving custom rubric to cloud:', e);
+      }
+    }
+
+    /***********************************************************************
+     * 6. ADMINISTRATOR AUTHENTICATION & ACCOUNT MANAGEMENT
+     ***********************************************************************/
+    function getInitials(nameStr) {
+      if (!nameStr) return 'AD';
+      const cleaned = nameStr.replace(/^(Ms\.|Mrs\.|Mr\.|Dr\.|Prof\.)\s*/i, '').trim();
+      const parts = cleaned.split(/\s+/);
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      }
+      return cleaned.substring(0, 2).toUpperCase();
+    }
+
+    function simpleHashPassword(raw) {
+      // Deterministic lightweight hash for password comparison
+      let hash = 0;
+      const str = 'ece_salt_' + (raw || '').trim();
+      for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i);
+        hash |= 0;
+      }
+      return 'h_' + Math.abs(hash).toString(36);
+    }
+
+    function loadAdminDataIntoView() {
+      applyActiveAdminRubric();
+      const myProfiles = allCloudObservations
+        .filter(p => p.adminId === currentAdmin.adminId)
+        .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+      if (myProfiles.length === 0) {
+        const seeded = createSampleSeededProfileForAdmin(currentAdmin);
+        allCloudObservations.push(seeded);
+        observationProfiles = [seeded];
+        currentProfileId = seeded.id;
+        saveObservationProfileToCloud(seeded);
+      } else {
+        observationProfiles = myProfiles;
+        currentProfileId = observationProfiles[0].id;
+      }
+      renderAll();
+    }
+
+    function renderAdminIdentityHeader() {
+      const initials = getInitials(currentAdmin.name);
+      document.getElementById('adminAvatarBadge').textContent = initials;
+      document.getElementById('headerAdminName').textContent = currentAdmin.name;
+      document.getElementById('headerAdminRole').textContent = currentAdmin.role || 'Administrator';
+      document.getElementById('headerTeacherCountBadge').textContent = observationProfiles.length;
+
+      document.getElementById('stripAdminDisplay').textContent =
+        `${currentAdmin.name} (${currentAdmin.email || 'Admin'})`;
+      document.getElementById('stripAdminSchool').textContent =
+        currentAdmin.school ? `• ${currentAdmin.school}` : '';
+
+      // Also update Auth Modal current admin banner
+      document.getElementById('modalCurrentAdminInitials').textContent = initials;
+      document.getElementById('modalCurrentAdminName').textContent = currentAdmin.name;
+      document.getElementById('modalCurrentAdminMeta').textContent =
+        `${currentAdmin.email} • ${currentAdmin.role || 'ECE-CTE Administrator'}`;
+    }
+
+    function openAdminAuthModal() {
+      hideAuthAlert();
+      renderAdminIdentityHeader();
+      renderRegisteredAdminsList();
+      const modal = document.getElementById('adminAuthModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeAdminAuthModal() {
+      const modal = document.getElementById('adminAuthModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function switchAuthTab(tab) {
+      hideAuthAlert();
+      const tabSignIn = document.getElementById('authTabSignIn');
+      const tabSignUp = document.getElementById('authTabSignUp');
+      const tabDirectory = document.getElementById('authTabDirectory');
+
+      const panelSignIn = document.getElementById('authPanelSignIn');
+      const panelSignUp = document.getElementById('authPanelSignUp');
+      const panelAccounts = document.getElementById('authPanelAccounts');
+
+      const activeBtnClass = 'px-4 py-2 rounded-t-xl text-xs sm:text-sm font-bold bg-white text-indigo-700 border-t border-x border-slate-200';
+      const inactiveBtnClass = 'px-4 py-2 rounded-t-xl text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900';
+
+      tabSignIn.className = tab === 'signin' ? activeBtnClass : inactiveBtnClass;
+      tabSignUp.className = tab === 'signup' ? activeBtnClass : inactiveBtnClass;
+      tabDirectory.className = tab === 'accounts' ? activeBtnClass : inactiveBtnClass;
+
+      panelSignIn.classList.toggle('hidden', tab !== 'signin');
+      panelSignUp.classList.toggle('hidden', tab !== 'signup');
+      panelAccounts.classList.toggle('hidden', tab !== 'accounts');
+
+      if (tab === 'accounts') {
+        renderRegisteredAdminsList();
+      }
+    }
+
+    function showAuthAlert(msg, isError = true) {
+      const box = document.getElementById('authModalAlertBox');
+      box.classList.remove('hidden');
+      if (isError) {
+        box.className = 'rounded-xl p-3 text-xs font-semibold border bg-rose-50 text-rose-800 border-rose-200 flex items-center gap-2';
+        box.innerHTML = `<i class="fa-solid fa-circle-exclamation text-rose-600"></i> <span>${escapeHtml(msg)}</span>`;
+      } else {
+        box.className = 'rounded-xl p-3 text-xs font-semibold border bg-emerald-50 text-emerald-800 border-emerald-200 flex items-center gap-2';
+        box.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600"></i> <span>${escapeHtml(msg)}</span>`;
+      }
+    }
+
+    function hideAuthAlert() {
+      const box = document.getElementById('authModalAlertBox');
+      if (box) box.classList.add('hidden');
+    }
+
+    async function handleAdminSignIn() {
+      const emailInput = document.getElementById('loginAdminEmail').value.trim().toLowerCase();
+      const passInput = document.getElementById('loginAdminPassword').value;
+
+      if (!emailInput) {
+        showAuthAlert('Please enter your Administrator Email or Username.');
+        return;
+      }
+
+      const found = registeredAdmins.find(a =>
+        (a.email && a.email.toLowerCase() === emailInput) ||
+        (a.name && a.name.toLowerCase() === emailInput)
+      );
+
+      if (!found) {
+        showAuthAlert('No administrator account found with that email/username. Click "Create Admin Account" to register.');
+        return;
+      }
+
+      // Check password for custom registered accounts
+      if (found.passwordHash && !found.passwordHash.startsWith('demo_')) {
+        const enteredHash = simpleHashPassword(passInput);
+        if (enteredHash !== found.passwordHash) {
+          showAuthAlert('Incorrect password for this Administrator Account.');
+          return;
+        }
+      }
+
+      await activateAdministratorAccount(found);
+      document.getElementById('loginAdminEmail').value = '';
+      document.getElementById('loginAdminPassword').value = '';
+      closeAdminAuthModal();
+      showToast(`Signed in as ${found.name}`);
+    }
+
+    async function handleAdminSignUp() {
+      const name = document.getElementById('regAdminName').value.trim();
+      const role = document.getElementById('regAdminRole').value.trim() || 'ECE-CTE Administrator';
+      const email = document.getElementById('regAdminEmail').value.trim().toLowerCase();
+      const school = document.getElementById('regAdminSchool').value.trim() || 'ECE-CTE Program';
+      const pass = document.getElementById('regAdminPassword').value;
+      const passConfirm = document.getElementById('regAdminPasswordConfirm').value;
+
+      if (!name || !email) {
+        showAuthAlert('Please enter both your Full Name and Email/Username.');
+        return;
+      }
+      if (!pass || pass.length < 4) {
+        showAuthAlert('Please choose a password or PIN with at least 4 characters.');
+        return;
+      }
+      if (pass !== passConfirm) {
+        showAuthAlert('Passwords do not match. Please re-enter.');
+        return;
+      }
+
+      const existing = registeredAdmins.find(a => a.email && a.email.toLowerCase() === email);
+      if (existing) {
+        showAuthAlert('An administrator with that email/username already exists. Please sign in instead.');
+        return;
+      }
+
+      const newAdmin = {
+        adminId: 'admin_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+        name,
+        role,
+        school,
+        email,
+        passwordHash: simpleHashPassword(pass),
+        createdAt: Date.now()
+      };
+
+      registeredAdmins.push(newAdmin);
+
+      // Save to Firestore
+      if (firebaseUser && db) {
+        try {
+          const adminRef = doc(db, 'artifacts', appId, 'public', 'data', 'adminAccounts', newAdmin.adminId);
+          await setDoc(adminRef, newAdmin);
+        } catch (e) {
+          console.error('Error saving new admin account to Firestore:', e);
+        }
+      }
+
+      // Clear registration inputs
+      document.getElementById('regAdminName').value = '';
+      document.getElementById('regAdminRole').value = '';
+      document.getElementById('regAdminEmail').value = '';
+      document.getElementById('regAdminSchool').value = '';
+      document.getElementById('regAdminPassword').value = '';
+      document.getElementById('regAdminPasswordConfirm').value = '';
+
+      await activateAdministratorAccount(newAdmin);
+      closeAdminAuthModal();
+      showToast(`Created & signed into ${newAdmin.name}'s Cloud Account!`);
+    }
+
+    async function quickDemoAdminLogin(key) {
+      const demo = DEMO_ADMINS[key];
+      if (!demo) return;
+      await activateAdministratorAccount(demo);
+      closeAdminAuthModal();
+      showToast(`Switched to ${demo.name}'s Administrator Portfolio`);
+    }
+
+    async function activateAdministratorAccount(adminObj) {
+      currentAdmin = { ...adminObj };
+      currentProfileId = null;
+      await saveActiveAdminSessionToCloud();
+      applyActiveAdminRubric();
+      await filterObservationsForCurrentAdmin();
+      renderAll();
+    }
+
+    function signOutAdministrator() {
+      // Open sign-in tab and prompt user to log into another account
+      switchAuthTab('signin');
+      showAuthAlert(`Signed out of ${currentAdmin.name}'s session. Sign in below or pick another Administrator Profile.`, false);
+    }
+
+    function renderRegisteredAdminsList() {
+      const badge = document.getElementById('savedAdminsCountBadge');
+      if (badge) badge.textContent = registeredAdmins.length;
+
+      const container = document.getElementById('registeredAdminsListContainer');
+      if (!container) return;
+
+      container.innerHTML = registeredAdmins.map(adm => {
+        const isCurrent = adm.adminId === currentAdmin.adminId;
+        const teacherCount = allCloudObservations.filter(p => p.adminId === adm.adminId).length;
+        return `
+          <div class="p-3.5 rounded-xl border ${isCurrent ? 'border-indigo-500 bg-indigo-50/60' : 'border-slate-200 bg-white'} flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-10 h-10 rounded-xl ${isCurrent ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-700'} font-bold text-xs flex items-center justify-center shrink-0">
+                ${escapeHtml(getInitials(adm.name))}
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="text-sm font-bold text-slate-900 truncate">${escapeHtml(adm.name)}</span>
+                  ${isCurrent ? '<span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-indigo-600 text-white">Active</span>' : ''}
+                </div>
+                <div class="text-xs text-slate-500 truncate">${escapeHtml(adm.role || 'Administrator')} • ${escapeHtml(adm.email)}</div>
+                <div class="text-[11px] text-indigo-700 font-semibold mt-0.5">
+                  <i class="fa-solid fa-folder-tree mr-1"></i> ${teacherCount} Saved Teacher Record${teacherCount === 1 ? '' : 's'}
+                </div>
+              </div>
+            </div>
+            <div>
+              ${isCurrent ? `
+                <span class="text-xs font-bold text-emerald-700 px-3 py-1.5 rounded-lg bg-emerald-100">Current</span>
+              ` : `
+                <button onclick="selectAdminFromList('${adm.adminId}')" class="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white text-xs font-bold transition">
+                  Switch Account
+                </button>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function selectAdminFromList(adminId) {
+      const adm = registeredAdmins.find(a => a.adminId === adminId);
+      if (!adm) return;
+      // If custom password protected, pre-fill email on Sign In tab so they can verify password
+      if (adm.passwordHash && !adm.passwordHash.startsWith('demo_')) {
+        switchAuthTab('signin');
+        document.getElementById('loginAdminEmail').value = adm.email;
+        document.getElementById('loginAdminPassword').focus();
+        showAuthAlert(`Enter password for ${adm.name} to unlock their portfolio.`, false);
+        return;
+      }
+      await activateAdministratorAccount(adm);
+      closeAdminAuthModal();
+      showToast(`Switched to ${adm.name}'s Cloud Profile`);
+    }
+
+    /***********************************************************************
+     * 7. MY RATED TEACHERS DIRECTORY (ADMIN PORTFOLIO DASHBOARD)
+     ***********************************************************************/
+    function openTeachersDirectoryModal() {
+      document.getElementById('dirAdminOwnerName').textContent = `• Logged in as ${currentAdmin.name}`;
+      renderTeachersDirectoryList();
+      const modal = document.getElementById('teachersDirectoryModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeTeachersDirectoryModal() {
+      const modal = document.getElementById('teachersDirectoryModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function renderTeachersDirectoryList() {
+      const searchQ = (document.getElementById('dirSearchInput')?.value || '').trim().toLowerCase();
+      const bandFilter = document.getElementById('dirFilterBand')?.value || 'ALL';
+
+      // Compute summary metrics across all of currentAdmin's teachers
+      let totalRated = observationProfiles.length;
+      let cohortScores = [];
+      let highCount = 0;
+      let goalsCount = 0;
+
+      observationProfiles.forEach(prof => {
+        const st = calculateOverallStats(prof);
+        if (st.overallAverage !== null) {
+          cohortScores.push(st.overallAverage);
+          if (st.overallBand.startsWith('High')) highCount++;
+        }
+        const gw = prof.goalWorksheet || {};
+        if (gw.strengthStatement || gw.growthStatement) {
+          goalsCount++;
+        }
+      });
+
+      document.getElementById('dirStatTotal').textContent = totalRated;
+      document.getElementById('dirStatCohortAvg').textContent =
+        cohortScores.length > 0
+          ? (cohortScores.reduce((a, b) => a + b, 0) / cohortScores.length).toFixed(2) + ' / 7.0'
+          : '—';
+      document.getElementById('dirStatHighCount').textContent = highCount;
+      document.getElementById('dirStatGoalsCount').textContent = goalsCount;
+
+      // Filter list
+      const filtered = observationProfiles.filter(prof => {
+        const st = calculateOverallStats(prof);
+        const matchesSearch = !searchQ ||
+          (prof.teacherName || '').toLowerCase().includes(searchQ) ||
+          (prof.classroom || '').toLowerCase().includes(searchQ) ||
+          (prof.date || '').toLowerCase().includes(searchQ);
+
+        let matchesBand = true;
+        if (bandFilter === 'High') matchesBand = st.overallBand.startsWith('High');
+        else if (bandFilter === 'Mid') matchesBand = st.overallBand.startsWith('Mid');
+        else if (bandFilter === 'Low') matchesBand = st.overallBand.startsWith('Low');
+        else if (bandFilter === 'Unrated') matchesBand = st.overallAverage === null;
+
+        return matchesSearch && matchesBand;
+      });
+
+      const container = document.getElementById('teachersDirectoryListContainer');
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-10 bg-white rounded-2xl border border-dashed border-slate-300 text-slate-500">
+            <i class="fa-solid fa-folder-open text-2xl text-slate-400 mb-2"></i>
+            <p class="text-sm font-semibold">No matching teacher observations found in ${escapeHtml(currentAdmin.name)}'s profile.</p>
+            <button onclick="createNewObservationProfile(); closeTeachersDirectoryModal();" class="mt-3 px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold">
+              + Create New Teacher Observation
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(prof => {
+        const isCurrent = prof.id === currentProfileId;
+        const st = calculateOverallStats(prof);
+        const gw = prof.goalWorksheet || {};
+        const hasGoals = Boolean(gw.strengthStatement || gw.growthStatement);
+
+        let badgeClass = 'bg-slate-100 text-slate-600 border-slate-200';
+        if (st.overallBand.startsWith('Low')) badgeClass = 'bg-rose-100 text-rose-800 border-rose-300';
+        else if (st.overallBand.startsWith('Mid')) badgeClass = 'bg-amber-100 text-amber-800 border-amber-300';
+        else if (st.overallBand.startsWith('High')) badgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-300';
+
+        const pct = Math.round((st.areasRated / rubricAreas.length) * 100);
+
+        return `
+          <div class="bg-white rounded-xl border ${isCurrent ? 'border-indigo-500 ring-2 ring-indigo-500/10' : 'border-slate-200'} p-4 transition hover:shadow-md flex flex-wrap items-center justify-between gap-4">
+            <div class="min-w-[220px] flex-1">
+              <div class="flex items-center gap-2 flex-wrap">
+                <h4 class="text-base font-extrabold text-slate-900">
+                  ${escapeHtml(prof.teacherName || 'Unnamed Teacher')}
+                </h4>
+                ${isCurrent ? '<span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-indigo-600 text-white">Currently Open</span>' : ''}
+                ${hasGoals ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200"><i class="fa-solid fa-bullseye mr-1"></i>Goals Saved</span>' : ''}
+              </div>
+              <div class="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-3">
+                <span><i class="fa-solid fa-school mr-1 text-slate-400"></i> ${escapeHtml(prof.classroom || 'No classroom set')}</span>
+                <span><i class="fa-regular fa-calendar mr-1 text-slate-400"></i> ${escapeHtml(prof.date || 'No date')}</span>
+                <span><i class="fa-solid fa-user-check mr-1 text-slate-400"></i> Observer: ${escapeHtml(prof.observerName || currentAdmin.name)}</span>
+              </div>
+            </div>
+
+            <!-- Progress & Mean Score -->
+            <div class="flex items-center gap-4">
+              <div class="w-32">
+                <div class="flex justify-between text-[11px] font-semibold text-slate-600 mb-1">
+                  <span>Areas Rated</span>
+                  <span>${st.areasRated} / ${rubricAreas.length}</span>
+                </div>
+                <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-indigo-600 rounded-full" style="width: ${pct}%"></div>
+                </div>
+              </div>
+
+              <div class="text-right min-w-[115px]">
+                <div class="text-lg font-black text-slate-900">
+                  ${st.overallAverage !== null ? st.overallAverage.toFixed(2) : '—'}
+                </div>
+                <span class="inline-block text-[11px] font-bold px-2 py-0.5 rounded-full border ${badgeClass}">
+                  ${st.overallBand}
+                </span>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center gap-1.5">
+              <button onclick="openProfileFromDirectory('${prof.id}', 'matrix')" class="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition flex items-center gap-1">
+                <i class="fa-solid fa-table-cells"></i> Score Matrix
+              </button>
+              <button onclick="openProfileFromDirectory('${prof.id}', 'report')" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition flex items-center gap-1">
+                <i class="fa-solid fa-file-lines"></i> Report
+              </button>
+              <button onclick="duplicateProfileById('${prof.id}')" title="Duplicate Teacher Observation" class="p-2 rounded-xl bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-700 text-xs transition">
+                <i class="fa-regular fa-clone"></i>
+              </button>
+              <button onclick="promptDeleteProfileById('${prof.id}')" title="Delete Teacher Observation" class="p-2 rounded-xl bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 text-xs transition">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function openProfileFromDirectory(profileId, targetView) {
+      currentProfileId = profileId;
+      closeTeachersDirectoryModal();
+      setMainView(targetView);
+      renderAll();
+      showToast('Loaded teacher observation record');
+    }
+
+    function exportAdminProfilesToJson() {
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        administrator: {
+          adminId: currentAdmin.adminId,
+          name: currentAdmin.name,
+          role: currentAdmin.role,
+          school: currentAdmin.school,
+          email: currentAdmin.email
+        },
+        customRubric: rubricAreas,
+        teacherObservations: observationProfiles
+      };
+
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const safeName = (currentAdmin.name || 'admin').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+      a.download = `ece_cte_ratings_${safeName}_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Exported your cloud teacher observations to JSON!');
+    }
+
+    function importAdminProfilesFromJson(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const data = JSON.parse(e.target.result);
+          const list = Array.isArray(data) ? data : (data.teacherObservations || []);
+          if (!Array.isArray(list) || list.length === 0) {
+            showToast('No valid teacher observations found in JSON file.', 'amber');
+            return;
+          }
+
+          for (const item of list) {
+            const importedProf = {
+              ...item,
+              id: 'obs_imp_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+              adminId: currentAdmin.adminId,
+              adminEmail: currentAdmin.email,
+              updatedAt: Date.now()
+            };
+            observationProfiles.unshift(importedProf);
+            allCloudObservations.unshift(importedProf);
+            await saveObservationProfileToCloud(importedProf);
+          }
+
+          currentProfileId = observationProfiles[0].id;
+          renderAll();
+          renderTeachersDirectoryList();
+          showToast(`Imported ${list.length} teacher observation(s) into ${currentAdmin.name}'s Cloud Profile!`);
+        } catch (err) {
+          console.error('Failed to import JSON:', err);
+          showToast('Invalid JSON file format.', 'amber');
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    /***********************************************************************
+     * 8. SCORING CALCULATIONS & CORE HELPERS
+     ***********************************************************************/
+    function getCurrentProfile() {
+      return observationProfiles.find(p => p.id === currentProfileId) || observationProfiles[0];
+    }
+
+    function getAreaRatingObj(profile, areaId) {
+      if (!profile.ratings) profile.ratings = {};
+      if (!profile.ratings[areaId]) {
+        profile.ratings[areaId] = {
+          categories: {},
+          observerNotes: '',
+          studentGoal: ''
+        };
+      }
+      return profile.ratings[areaId];
+    }
+
+    function calculateAreaStats(profile, area) {
+      if (!profile || !profile.ratings) {
+        return { ratedCount: 0, totalCount: area.categories.length, average: null, band: null };
+      }
+      const areaData = profile.ratings[area.id];
+      if (!areaData || !areaData.categories) {
+        return { ratedCount: 0, totalCount: area.categories.length, average: null, band: null };
+      }
+
+      let sum = 0;
+      let ratedCount = 0;
+      area.categories.forEach(cat => {
+        const r = areaData.categories[cat.id];
+        if (r && r.band && typeof r.score === 'number') {
+          sum += r.score;
+          ratedCount++;
+        }
+      });
+
+      if (ratedCount === 0) {
+        return { ratedCount: 0, totalCount: area.categories.length, average: null, band: null };
+      }
+
+      const avg = sum / ratedCount;
+      let band = 'Mid';
+      if (avg < 2.5) band = 'Low';
+      else if (avg >= 5.5) band = 'High';
+
+      return {
+        ratedCount,
+        totalCount: area.categories.length,
+        average: avg,
+        band
+      };
+    }
+
+    function calculateOverallStats(profile) {
+      let areaAverages = [];
+      rubricAreas.forEach(area => {
+        const st = calculateAreaStats(profile, area);
+        if (st.average !== null) {
+          areaAverages.push(st.average);
+        }
+      });
+
+      if (areaAverages.length === 0) {
+        return { areasRated: 0, overallAverage: null, overallBand: 'Not Rated' };
+      }
+
+      const mean = areaAverages.reduce((a, b) => a + b, 0) / areaAverages.length;
+      let band = 'Mid (3,4,5)';
+      if (mean < 2.5) band = 'Low (1,2)';
+      else if (mean >= 5.5) band = 'High (6,7)';
+
+      return {
+        areasRated: areaAverages.length,
+        overallAverage: mean,
+        overallBand: band
+      };
+    }
+
+    /***********************************************************************
+     * 9. UI RENDERING FUNCTIONS
+     ***********************************************************************/
+    function renderAll() {
+      if (!observationProfiles || observationProfiles.length === 0) {
+        const fallback = createSampleSeededProfileForAdmin(currentAdmin);
+        observationProfiles = [fallback];
+        currentProfileId = fallback.id;
+      }
+      renderAdminIdentityHeader();
+      renderProfileSelector();
+      renderMetadataHeader();
+      renderBroadAreasSidebar();
+      renderActiveMatrix();
+      if (currentMainView === 'report') {
+        renderReportView();
+      }
+    }
+
+    function renderProfileSelector() {
+      const sel = document.getElementById('profileSelector');
+      sel.innerHTML = observationProfiles.map(p => {
+        const label = p.teacherName ? p.teacherName : 'Unnamed Observation';
+        const selected = p.id === currentProfileId ? 'selected' : '';
+        return `<option value="${p.id}" ${selected}>${escapeHtml(label)} (${p.date || 'No date'})</option>`;
+      }).join('');
+    }
+
+    function renderMetadataHeader() {
+      const profile = getCurrentProfile();
+      if (!profile) return;
+      document.getElementById('metaTeacherName').value = profile.teacherName || '';
+      document.getElementById('metaObserverName').value = profile.observerName || '';
+      document.getElementById('metaDate').value = profile.date || '';
+      document.getElementById('metaClassroom').value = profile.classroom || '';
+
+      updateOverallSummaryBadges();
+    }
+
+    function updateOverallSummaryBadges() {
+      const profile = getCurrentProfile();
+      const overall = calculateOverallStats(profile);
+
+      const avgEl = document.getElementById('overallAverageScore');
+      const badgeEl = document.getElementById('overallBandBadge');
+      const countEl = document.getElementById('areasCompletedCount');
+
+      countEl.textContent = `${overall.areasRated} / ${rubricAreas.length}`;
+
+      if (overall.overallAverage === null) {
+        avgEl.textContent = '—';
+        badgeEl.textContent = 'Not Rated';
+        badgeEl.className = 'text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700';
+      } else {
+        avgEl.textContent = overall.overallAverage.toFixed(2);
+        badgeEl.textContent = overall.overallBand;
+        if (overall.overallBand.startsWith('Low')) {
+          badgeEl.className = 'text-xs font-semibold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300';
+        } else if (overall.overallBand.startsWith('Mid')) {
+          badgeEl.className = 'text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300';
+        } else {
+          badgeEl.className = 'text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300';
+        }
+      }
+    }
+
+    function renderBroadAreasSidebar() {
+      const nav = document.getElementById('broadAreasNav');
+      const profile = getCurrentProfile();
+
+      nav.innerHTML = rubricAreas.map((area, idx) => {
+        const isActive = idx === activeAreaIndex;
+        const stats = calculateAreaStats(profile, area);
+
+        let domainColor = 'text-rose-600';
+        if (area.domain === 'Classroom Organization') domainColor = 'text-sky-600';
+        if (area.domain === 'Instructional Support') domainColor = 'text-violet-600';
+
+        let scorePill = `<span class="text-[11px] font-medium text-slate-400">${stats.ratedCount}/${stats.totalCount}</span>`;
+        if (stats.average !== null) {
+          let pillStyle = 'bg-amber-100 text-amber-800 border-amber-300';
+          if (stats.band === 'Low') pillStyle = 'bg-rose-100 text-rose-800 border-rose-300';
+          if (stats.band === 'High') pillStyle = 'bg-emerald-100 text-emerald-800 border-emerald-300';
+          scorePill = `<span class="text-xs font-bold px-2 py-0.5 rounded-full border ${pillStyle}">${stats.average.toFixed(1)} (${stats.band})</span>`;
+        }
+
+        return `
+          <button onclick="selectBroadArea(${idx})"
+            class="w-full text-left px-4 py-3 transition flex items-center justify-between gap-2 ${
+              isActive
+                ? 'bg-indigo-50/90 border-l-4 border-indigo-600 font-semibold'
+                : 'hover:bg-slate-50 border-l-4 border-transparent'
+            }">
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5">
+                <span class="text-[10px] font-bold uppercase tracking-wider ${domainColor}">${escapeHtml(area.domain)}</span>
+                ${area.isVerbatimUploaded ? '<span title="Exact Verbatim Matrix" class="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 rounded font-semibold">★ Verbatim</span>' : ''}
+              </div>
+              <div class="text-sm text-slate-900 truncate mt-0.5">
+                ${area.number}. ${escapeHtml(area.title)}
+              </div>
+            </div>
+            <div class="shrink-0">
+              ${scorePill}
+            </div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function renderActiveMatrix() {
+      const area = rubricAreas[activeAreaIndex];
+      const profile = getCurrentProfile();
+      const areaRatingObj = getAreaRatingObj(profile, area.id);
+      const stats = calculateAreaStats(profile, area);
+
+      document.getElementById('activeAreaNumberBadge').textContent = area.number;
+      document.getElementById('activeAreaTitleTop').textContent = area.title;
+      document.getElementById('matrixBannerTitle').textContent = area.title;
+      document.getElementById('feedbackAreaName').textContent = area.title;
+
+      const domainBadge = document.getElementById('activeAreaDomainBadge');
+      domainBadge.textContent = area.domain;
+      if (area.domain === 'Emotional Support') {
+        domainBadge.className = 'text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-rose-100 text-rose-800';
+      } else if (area.domain === 'Classroom Organization') {
+        domainBadge.className = 'text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-sky-100 text-sky-800';
+      } else {
+        domainBadge.className = 'text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-violet-100 text-violet-800';
+      }
+
+      const verbatimTag = document.getElementById('activeAreaVerbatimTag');
+      if (area.isVerbatimUploaded) {
+        verbatimTag.className = 'text-[11px] font-semibold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 flex items-center gap-1';
+        verbatimTag.innerHTML = '<i class="fa-solid fa-check-circle"></i> Exact Verbatim Matrix';
+      } else {
+        verbatimTag.className = 'text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600 flex items-center gap-1';
+        verbatimTag.innerHTML = '<i class="fa-solid fa-pen"></i> Standard CLASS Template (Editable)';
+      }
+
+      const avgEl = document.getElementById('activeAreaAvgScore');
+      const bandEl = document.getElementById('activeAreaBandLabel');
+      if (stats.average === null) {
+        avgEl.textContent = '—';
+        bandEl.textContent = `Unrated (0/${stats.totalCount})`;
+        bandEl.className = 'text-xs font-bold px-2 py-0.5 rounded bg-slate-200 text-slate-700';
+      } else {
+        avgEl.textContent = stats.average.toFixed(2);
+        bandEl.textContent = `${stats.band} (${stats.ratedCount}/${stats.totalCount})`;
+        if (stats.band === 'Low') {
+          bandEl.className = 'text-xs font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-300';
+        } else if (stats.band === 'Mid') {
+          bandEl.className = 'text-xs font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-300';
+        } else {
+          bandEl.className = 'text-xs font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300';
+        }
+      }
+
+      // Render Matrix Rows
+      const container = document.getElementById('matrixRowsContainer');
+      container.innerHTML = area.categories.map(cat => {
+        const currentRating = areaRatingObj.categories[cat.id] || null;
+        const selectedBand = currentRating ? currentRating.band : null;
+        const selectedScore = currentRating ? currentRating.score : null;
+
+        const lowSelectedClass = selectedBand === 'low' ? 'rating-selected-low' : 'bg-white hover:bg-rose-50/40 border-slate-200';
+        const midSelectedClass = selectedBand === 'mid' ? 'rating-selected-mid' : 'bg-white hover:bg-amber-50/40 border-slate-200';
+        const highSelectedClass = selectedBand === 'high' ? 'rating-selected-high' : 'bg-white hover:bg-emerald-50/40 border-slate-200';
+
+        return `
+          <div class="grid grid-cols-12 gap-3 py-5 items-stretch">
+            <!-- Left Column: Category of Skill & Bulleted Indicators -->
+            <div class="col-span-3 pr-3 flex flex-col justify-between">
+              <div>
+                <h4 class="text-lg font-bold text-slate-900 leading-snug mb-1.5">
+                  ${escapeHtml(cat.name)}
+                </h4>
+                <ul class="list-disc pl-5 space-y-1 text-sm text-slate-800 leading-snug">
+                  ${cat.bullets.map(b => `<li>${escapeHtml(b)}</li>`).join('')}
+                </ul>
+              </div>
+
+              ${selectedBand ? `
+                <div class="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between">
+                  <span class="text-xs font-bold uppercase tracking-wider ${
+                    selectedBand === 'low' ? 'text-rose-700' : selectedBand === 'mid' ? 'text-amber-700' : 'text-emerald-700'
+                  }">
+                    Rated: ${selectedBand.toUpperCase()} (${selectedScore})
+                  </span>
+                  <button onclick="clearCategoryRating('${area.id}', '${cat.id}')" class="text-[11px] text-slate-400 hover:text-rose-600 underline">
+                    Clear
+                  </button>
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- Right 3 Columns: Low (1,2), Mid (3,4,5), High (6,7) -->
+            <div class="col-span-9 grid grid-cols-3 gap-3">
+
+              <!-- LOW (1,2) Cell -->
+              <div onclick="selectCategoryBand('${area.id}', '${cat.id}', 'low', 2)"
+                class="rating-cell rounded-xl border p-3.5 flex flex-col justify-between ${lowSelectedClass}">
+                <p class="text-sm text-slate-900 leading-relaxed">
+                  ${escapeHtml(cat.low)}
+                </p>
+                <div class="mt-4 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-1">
+                  <span class="text-[11px] font-bold uppercase tracking-wider ${selectedBand === 'low' ? 'text-rose-700' : 'text-slate-400'}">
+                    ${selectedBand === 'low' ? '<i class="fa-solid fa-circle-check"></i> Low Selected' : 'Click for Low'}
+                  </span>
+                  <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                    ${[1, 2].map(num => `
+                      <button onclick="selectCategoryBand('${area.id}', '${cat.id}', 'low', ${num})"
+                        class="w-7 h-7 rounded-lg text-xs font-bold transition ${
+                          selectedScore === num
+                            ? 'bg-rose-600 text-white shadow-xs'
+                            : 'bg-slate-100 hover:bg-rose-100 text-slate-700'
+                        }">
+                        ${num}
+                      </button>
+                    `).join('')}
+                  </div>
+                </div>
+              </div>
+
+              <!-- MID (3,4,5) Cell -->
+              <div onclick="selectCategoryBand('${area.id}', '${cat.id}', 'mid', 4)"
+                class="rating-cell rounded-xl border p-3.5 flex flex-col justify-between ${midSelectedClass}">
+                <p class="text-sm text-slate-900 leading-relaxed">
+                  ${escapeHtml(cat.mid)}
+                </p>
+                <div class="mt-4 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-1">
+                  <span class="text-[11px] font-bold uppercase tracking-wider ${selectedBand === 'mid' ? 'text-amber-700' : 'text-slate-400'}">
+                    ${selectedBand === 'mid' ? '<i class="fa-solid fa-circle-check"></i> Mid Selected' : 'Click for Mid'}
+                  </span>
+                  <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                    ${[3, 4, 5].map(num => `
+                      <button onclick="selectCategoryBand('${area.id}', '${cat.id}', 'mid', ${num})"
+                        class="w-7 h-7 rounded-lg text-xs font-bold transition ${
+                          selectedScore === num
+                            ? 'bg-amber-600 text-white shadow-xs'
+                            : 'bg-slate-100 hover:bg-amber-100 text-slate-700'
+                        }">
+                        ${num}
+                      </button>
+                    `).join('')}
+                  </div>
+                </div>
+              </div>
+
+              <!-- HIGH (6,7) Cell -->
+              <div onclick="selectCategoryBand('${area.id}', '${cat.id}', 'high', 6)"
+                class="rating-cell rounded-xl border p-3.5 flex flex-col justify-between ${highSelectedClass}">
+                <p class="text-sm text-slate-900 leading-relaxed">
+                  ${escapeHtml(cat.high)}
+                </p>
+                <div class="mt-4 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-1">
+                  <span class="text-[11px] font-bold uppercase tracking-wider ${selectedBand === 'high' ? 'text-emerald-700' : 'text-slate-400'}">
+                    ${selectedBand === 'high' ? '<i class="fa-solid fa-circle-check"></i> High Selected' : 'Click for High'}
+                  </span>
+                  <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                    ${[6, 7].map(num => `
+                      <button onclick="selectCategoryBand('${area.id}', '${cat.id}', 'high', ${num})"
+                        class="w-7 h-7 rounded-lg text-xs font-bold transition ${
+                          selectedScore === num
+                            ? 'bg-emerald-600 text-white shadow-xs'
+                            : 'bg-slate-100 hover:bg-emerald-100 text-slate-700'
+                        }">
+                        ${num}
+                      </button>
+                    `).join('')}
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('areaObserverNotes').value = areaRatingObj.observerNotes || '';
+      document.getElementById('areaStudentGoal').value = areaRatingObj.studentGoal || '';
+
+      document.getElementById('btnPrevArea').disabled = activeAreaIndex === 0;
+      document.getElementById('btnPrevArea').classList.toggle('opacity-50', activeAreaIndex === 0);
+      document.getElementById('btnNextArea').disabled = activeAreaIndex === rubricAreas.length - 1;
+      document.getElementById('btnNextArea').classList.toggle('opacity-50', activeAreaIndex === rubricAreas.length - 1);
+    }
+
+    /***********************************************************************
+     * 10. INTERACTIVE RATING & NOTES HANDLERS
+     ***********************************************************************/
+    function selectCategoryBand(areaId, catId, band, defaultScore) {
+      const profile = getCurrentProfile();
+      const areaRatingObj = getAreaRatingObj(profile, areaId);
+
+      areaRatingObj.categories[catId] = {
+        band,
+        score: defaultScore
+      };
+
+      renderBroadAreasSidebar();
+      renderActiveMatrix();
+      updateOverallSummaryBadges();
+      scheduleSaveCurrentProfile();
+    }
+
+    function clearCategoryRating(areaId, catId) {
+      const profile = getCurrentProfile();
+      const areaRatingObj = getAreaRatingObj(profile, areaId);
+      delete areaRatingObj.categories[catId];
+
+      renderBroadAreasSidebar();
+      renderActiveMatrix();
+      updateOverallSummaryBadges();
+      scheduleSaveCurrentProfile();
+    }
+
+    function clearCurrentAreaRatings() {
+      const area = rubricAreas[activeAreaIndex];
+      const profile = getCurrentProfile();
+      profile.ratings[area.id] = {
+        categories: {},
+        observerNotes: '',
+        studentGoal: ''
+      };
+      renderAll();
+      scheduleSaveCurrentProfile();
+      showToast(`Cleared ratings for ${area.title}`);
+    }
+
+    function saveAreaNotes() {
+      const area = rubricAreas[activeAreaIndex];
+      const profile = getCurrentProfile();
+      const areaRatingObj = getAreaRatingObj(profile, area.id);
+
+      areaRatingObj.observerNotes = document.getElementById('areaObserverNotes').value;
+      areaRatingObj.studentGoal = document.getElementById('areaStudentGoal').value;
+      scheduleSaveCurrentProfile();
+    }
+
+    function insertSelectedDescriptorsIntoFeedback() {
+      const area = rubricAreas[activeAreaIndex];
+      const profile = getCurrentProfile();
+      const areaRatingObj = getAreaRatingObj(profile, area.id);
+
+      let lines = [];
+      area.categories.forEach(cat => {
+        const r = areaRatingObj.categories[cat.id];
+        if (r && r.band) {
+          const text = cat[r.band];
+          const bandLabel = r.band === 'low' ? 'Low (1,2)' : r.band === 'mid' ? 'Mid (3,4,5)' : 'High (6,7)';
+          lines.push(`• ${cat.name} [${bandLabel} — Score ${r.score}]: "${text}"`);
+        }
+      });
+
+      if (lines.length === 0) {
+        showToast('Select at least one Low, Mid, or High cell in this matrix first!', 'amber');
+        return;
+      }
+
+      const currentNotes = document.getElementById('areaObserverNotes').value.trim();
+      const combined = (currentNotes ? currentNotes + '\n\n' : '') +
+        `CLASS ${area.title} Rubric Judgments:\n` + lines.join('\n');
+
+      document.getElementById('areaObserverNotes').value = combined;
+      saveAreaNotes();
+      showToast('Inserted verbatim rubric descriptors into Observer Feedback!');
+    }
+
+    function selectBroadArea(index) {
+      activeAreaIndex = index;
+      renderBroadAreasSidebar();
+      renderActiveMatrix();
+    }
+
+    function navigateArea(delta) {
+      const next = activeAreaIndex + delta;
+      if (next >= 0 && next < rubricAreas.length) {
+        selectBroadArea(next);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+
+    function updateMetadata() {
+      const profile = getCurrentProfile();
+      if (!profile) return;
+      profile.teacherName = document.getElementById('metaTeacherName').value;
+      profile.observerName = document.getElementById('metaObserverName').value;
+      profile.date = document.getElementById('metaDate').value;
+      profile.classroom = document.getElementById('metaClassroom').value;
+      renderProfileSelector();
+      scheduleSaveCurrentProfile();
+    }
+
+    /***********************************************************************
+     * 11. OBSERVATION PROFILE SWITCHING, CREATION, DUPLICATION & DELETION
+     ***********************************************************************/
+    function switchObservationProfile(profileId) {
+      currentProfileId = profileId;
+      renderAll();
+      showToast('Switched active teacher observation record');
+    }
+
+    async function createNewObservationProfile() {
+      const count = observationProfiles.length + 1;
+      const newProf = createBlankProfile(`Student Teacher #${count}`, currentAdmin);
+      observationProfiles.unshift(newProf);
+      allCloudObservations.unshift(newProf);
+      currentProfileId = newProf.id;
+      renderAll();
+      await saveObservationProfileToCloud(newProf);
+
+      const input = document.getElementById('metaTeacherName');
+      if (input) {
+        input.focus();
+        input.select();
+      }
+      showToast(`Created new Teacher Observation under ${currentAdmin.name}!`);
+    }
+
+    async function duplicateCurrentProfile() {
+      const current = getCurrentProfile();
+      if (!current) return;
+      await duplicateProfileById(current.id);
+    }
+
+    async function duplicateProfileById(profileId) {
+      const orig = observationProfiles.find(p => p.id === profileId);
+      if (!orig) return;
+
+      const copy = JSON.parse(JSON.stringify(orig));
+      copy.id = 'obs_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+      copy.teacherName = `${orig.teacherName || 'Teacher'} (Follow-Up Observation)`;
+      copy.date = new Date().toISOString().split('T')[0];
+      copy.updatedAt = Date.now();
+
+      observationProfiles.unshift(copy);
+      allCloudObservations.unshift(copy);
+      currentProfileId = copy.id;
+      await saveObservationProfileToCloud(copy);
+      renderAll();
+      renderTeachersDirectoryList();
+      showToast(`Duplicated record for ${orig.teacherName}`);
+    }
+
+    function promptDeleteCurrentProfile() {
+      const current = getCurrentProfile();
+      if (!current) return;
+      promptDeleteProfileById(current.id);
+    }
+
+    function promptDeleteProfileById(profileId) {
+      const target = observationProfiles.find(p => p.id === profileId);
+      if (!target) return;
+
+      openConfirmDialog(
+        'Delete Teacher Evaluation?',
+        `Are you sure you want to remove "${target.teacherName || 'Unnamed Observation'}" from ${currentAdmin.name}'s cloud portfolio?`,
+        async () => {
+          await executeDeleteProfile(profileId);
+        }
+      );
+    }
+
+    async function executeDeleteProfile(profileId) {
+      if (firebaseUser && db) {
+        try {
+          const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'adminObservations', profileId);
+          await deleteDoc(docRef);
+        } catch (e) {
+          console.error('Error deleting profile from cloud:', e);
+        }
+      }
+
+      observationProfiles = observationProfiles.filter(p => p.id !== profileId);
+      allCloudObservations = allCloudObservations.filter(p => p.id !== profileId);
+
+      if (observationProfiles.length === 0) {
+        const blank = createBlankProfile('New Student Teacher', currentAdmin);
+        observationProfiles = [blank];
+        allCloudObservations.push(blank);
+        currentProfileId = blank.id;
+        await saveObservationProfileToCloud(blank);
+      } else if (currentProfileId === profileId) {
+        currentProfileId = observationProfiles[0].id;
+      }
+
+      renderAll();
+      renderTeachersDirectoryList();
+      showToast('Deleted observation record from Cloud Profile');
+    }
+
+    function openConfirmDialog(title, message, onConfirmFn) {
+      document.getElementById('confirmDialogTitle').textContent = title;
+      document.getElementById('confirmDialogMessage').textContent = message;
+      const btn = document.getElementById('confirmDialogActionBtn');
+      btn.onclick = () => {
+        closeConfirmDialog();
+        onConfirmFn();
+      };
+      const modal = document.getElementById('confirmDialogModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeConfirmDialog() {
+      const modal = document.getElementById('confirmDialogModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    /***********************************************************************
+     * 12. SUMMARY REPORT & ECE-CTE GOAL ASSIGNMENT VIEW
+     ***********************************************************************/
+    function setMainView(view) {
+      currentMainView = view;
+      const matrixEl = document.getElementById('viewMatrix');
+      const reportEl = document.getElementById('viewReport');
+      const btnMatrix = document.getElementById('tabBtnMatrix');
+      const btnReport = document.getElementById('tabBtnReport');
+
+      if (view === 'report') {
+        matrixEl.classList.add('hidden');
+        reportEl.classList.remove('hidden');
+        btnReport.className = 'px-2.5 py-1 rounded-md text-xs sm:text-sm font-semibold bg-indigo-600 text-white transition flex items-center gap-1.5';
+        btnMatrix.className = 'px-2.5 py-1 rounded-md text-xs sm:text-sm font-semibold text-slate-300 hover:text-white transition flex items-center gap-1.5';
+        renderReportView();
+      } else {
+        reportEl.classList.add('hidden');
+        matrixEl.classList.remove('hidden');
+        btnMatrix.className = 'px-2.5 py-1 rounded-md text-xs sm:text-sm font-semibold bg-indigo-600 text-white transition flex items-center gap-1.5';
+        btnReport.className = 'px-2.5 py-1 rounded-md text-xs sm:text-sm font-semibold text-slate-300 hover:text-white transition flex items-center gap-1.5';
+        renderAll();
+      }
+    }
+
+    function renderReportView() {
+      const profile = getCurrentProfile();
+      const overall = calculateOverallStats(profile);
+
+      document.getElementById('reportHeaderTeacher').textContent =
+        profile.teacherName || 'Student / Teacher Evaluation Report';
+      document.getElementById('reportHeaderSub').textContent =
+        `Administrator / Observer: ${profile.observerName || currentAdmin.name}  •  Date: ${profile.date || '—'}  •  Classroom: ${profile.classroom || '—'}`;
+
+      document.getElementById('reportOverallScore').textContent =
+        overall.overallAverage !== null ? `${overall.overallAverage.toFixed(2)} / 7.0` : '—';
+      document.getElementById('reportOverallBand').textContent =
+        overall.overallBand;
+
+      const gridEl = document.getElementById('reportTenAreasGrid');
+      gridEl.innerHTML = rubricAreas.map((area, idx) => {
+        const st = calculateAreaStats(profile, area);
+        let cardColor = 'bg-slate-50 border-slate-200 text-slate-500';
+        if (st.average !== null) {
+          if (st.band === 'Low') cardColor = 'bg-rose-50 border-rose-200 text-rose-900';
+          else if (st.band === 'Mid') cardColor = 'bg-amber-50 border-amber-200 text-amber-900';
+          else cardColor = 'bg-emerald-50 border-emerald-200 text-emerald-900';
+        }
+        return `
+          <div onclick="setMainView('matrix'); selectBroadArea(${idx});"
+            class="cursor-pointer rounded-xl border p-3 transition hover:shadow-xs ${cardColor}">
+            <div class="text-[11px] font-bold uppercase opacity-75">${area.number}. ${escapeHtml(area.domain)}</div>
+            <div class="text-xs font-extrabold truncate mt-0.5">${escapeHtml(area.title)}</div>
+            <div class="mt-2 flex items-baseline justify-between">
+              <span class="text-lg font-black">${st.average !== null ? st.average.toFixed(1) : '—'}</span>
+              <span class="text-[11px] font-semibold">${st.band ? st.band : 'Unrated'}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      const detailedContainer = document.getElementById('reportDetailedAreasContainer');
+      const ratedAreasHtml = rubricAreas.map(area => {
+        const st = calculateAreaStats(profile, area);
+        const areaObj = profile.ratings ? profile.ratings[area.id] : null;
+        const hasNotes = areaObj && (areaObj.observerNotes || areaObj.studentGoal);
+
+        if (st.ratedCount === 0 && !hasNotes) return '';
+
+        const catRowsHtml = area.categories.map(cat => {
+          const r = areaObj && areaObj.categories ? areaObj.categories[cat.id] : null;
+          if (!r || !r.band) return '';
+
+          const bandTitle = r.band === 'low' ? 'Low (1,2)' : r.band === 'mid' ? 'Mid (3,4,5)' : 'High (6,7)';
+          const badgeClass = r.band === 'low'
+            ? 'bg-rose-100 text-rose-800 border-rose-300'
+            : r.band === 'mid'
+            ? 'bg-amber-100 text-amber-800 border-amber-300'
+            : 'bg-emerald-100 text-emerald-800 border-emerald-300';
+
+          return `
+            <div class="py-3 border-b border-slate-100 last:border-b-0 grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
+              <div class="md:col-span-4">
+                <div class="font-bold text-sm text-slate-900">${escapeHtml(cat.name)}</div>
+                <ul class="list-disc pl-4 text-xs text-slate-600 mt-0.5 space-y-0.5">
+                  ${cat.bullets.map(b => `<li>${escapeHtml(b)}</li>`).join('')}
+                </ul>
+              </div>
+              <div class="md:col-span-3">
+                <span class="inline-block text-xs font-bold px-2.5 py-1 rounded-md border ${badgeClass}">
+                  ${bandTitle} • Score: ${r.score}
+                </span>
+              </div>
+              <div class="md:col-span-5 text-sm text-slate-800 bg-slate-50 p-2.5 rounded-lg border border-slate-200 italic">
+                "${escapeHtml(cat[r.band])}"
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        return `
+          <div class="rounded-xl border border-slate-300 overflow-hidden print-break-inside-avoid">
+            <div class="bg-slate-100 px-4 py-3 border-b border-slate-300 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <span class="text-xs font-bold uppercase text-slate-500">${area.number}. ${escapeHtml(area.domain)}</span>
+                <h4 class="text-base font-extrabold text-slate-900">${escapeHtml(area.title)}</h4>
+              </div>
+              <div class="text-sm font-bold text-slate-800">
+                Area Mean: ${st.average !== null ? `${st.average.toFixed(2)} (${st.band})` : 'Not Scored'}
+              </div>
+            </div>
+            <div class="p-4 space-y-3">
+              ${catRowsHtml || '<p class="text-xs text-slate-400 italic">No individual skill categories clicked yet.</p>'}
+
+              ${(areaObj && (areaObj.observerNotes || areaObj.studentGoal)) ? `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t border-slate-200">
+                  ${areaObj.observerNotes ? `
+                    <div class="bg-indigo-50/50 p-3 rounded-lg border border-indigo-100">
+                      <div class="text-xs font-bold uppercase text-indigo-900 mb-1">Observer Feedback Notes</div>
+                      <p class="text-xs text-slate-800 whitespace-pre-line">${escapeHtml(areaObj.observerNotes)}</p>
+                    </div>
+                  ` : ''}
+                  ${areaObj.studentGoal ? `
+                    <div class="bg-emerald-50/50 p-3 rounded-lg border border-emerald-100">
+                      <div class="text-xs font-bold uppercase text-emerald-900 mb-1">Student Goal / Reflection</div>
+                      <p class="text-xs text-slate-800 whitespace-pre-line">${escapeHtml(areaObj.studentGoal)}</p>
+                    </div>
+                  ` : ''}
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).filter(Boolean).join('');
+
+      detailedContainer.innerHTML = ratedAreasHtml || `
+        <div class="text-center py-8 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-slate-500 text-sm">
+          No ratings or observer feedback recorded yet. Click on any Low, Mid, or High descriptor in the <strong>Scoring Matrix</strong> tab to populate this report!
+        </div>
+      `;
+
+      const gw = profile.goalWorksheet || {};
+      document.getElementById('goalStrengthReflection').value = gw.strengthReflection || '';
+      document.getElementById('goalTeacherFeedback').value = gw.teacherFeedback || '';
+      document.getElementById('goalStrengthStatement').value = gw.strengthStatement || '';
+      document.getElementById('goalGrowthReflection').value = gw.growthReflection || '';
+      document.getElementById('goalGrowthStatement').value = gw.growthStatement || '';
+    }
+
+    function saveGoalWorksheet() {
+      const profile = getCurrentProfile();
+      profile.goalWorksheet = {
+        strengthReflection: document.getElementById('goalStrengthReflection').value,
+        teacherFeedback: document.getElementById('goalTeacherFeedback').value,
+        strengthStatement: document.getElementById('goalStrengthStatement').value,
+        growthReflection: document.getElementById('goalGrowthReflection').value,
+        growthStatement: document.getElementById('goalGrowthStatement').value
+      };
+      scheduleSaveCurrentProfile();
+    }
+
+    function copyReportTextToClipboard() {
+      const profile = getCurrentProfile();
+      const overall = calculateOverallStats(profile);
+
+      let lines = [];
+      lines.push(`============================================================`);
+      lines.push(`TEACHER EFFECTIVENESS & CLASS OBSERVATION SUMMARY`);
+      lines.push(`============================================================`);
+      lines.push(`Student / Teacher:      ${profile.teacherName || 'N/A'}`);
+      lines.push(`Administrator/Observer: ${profile.observerName || currentAdmin.name}`);
+      lines.push(`Date:                   ${profile.date || 'N/A'}`);
+      lines.push(`Classroom:              ${profile.classroom || 'N/A'}`);
+      lines.push(`Overall Mean:           ${overall.overallAverage !== null ? overall.overallAverage.toFixed(2) + ' (' + overall.overallBand + ')' : 'Not Rated'}`);
+      lines.push(``);
+
+      rubricAreas.forEach(area => {
+        const st = calculateAreaStats(profile, area);
+        const areaObj = profile.ratings ? profile.ratings[area.id] : null;
+        if (st.ratedCount > 0 || (areaObj && (areaObj.observerNotes || areaObj.studentGoal))) {
+          lines.push(`------------------------------------------------------------`);
+          lines.push(`${area.number}. ${area.title.toUpperCase()} (${area.domain}) — Mean: ${st.average !== null ? st.average.toFixed(2) + ' [' + st.band + ']' : 'Unrated'}`);
+          lines.push(`------------------------------------------------------------`);
+          area.categories.forEach(cat => {
+            const r = areaObj && areaObj.categories ? areaObj.categories[cat.id] : null;
+            if (r && r.band) {
+              const bandLabel = r.band === 'low' ? 'Low (1,2)' : r.band === 'mid' ? 'Mid (3,4,5)' : 'High (6,7)';
+              lines.push(`• ${cat.name}: ${bandLabel} [Score: ${r.score}]`);
+              lines.push(`  Descriptor: "${cat[r.band]}"`);
+            }
+          });
+          if (areaObj && areaObj.observerNotes) {
+            lines.push(`Observer Notes: ${areaObj.observerNotes}`);
+          }
+          if (areaObj && areaObj.studentGoal) {
+            lines.push(`Area Goal: ${areaObj.studentGoal}`);
+          }
+          lines.push(``);
+        }
+      });
+
+      const gw = profile.goalWorksheet || {};
+      lines.push(`============================================================`);
+      lines.push(`GOAL SETTING: ECE REFLECTIONS`);
+      lines.push(`============================================================`);
+      lines.push(`PART 1: BUILDING ON YOUR STRENGTHS`);
+      lines.push(`• My Strength (from my reflection): ${gw.strengthReflection || '[Write your answer here]'}`);
+      lines.push(`• My Teacher's Feedback (CLASS connection): ${gw.teacherFeedback || '[Write your answer here]'}`);
+      lines.push(`• My Strengths-Based Goal: ${gw.strengthStatement || '[Write your goal here]'}`);
+      lines.push(``);
+      lines.push(`PART 2: AREA FOR GROWTH`);
+      lines.push(`• What I want to do differently: ${gw.growthReflection || '[Write your answer here]'}`);
+      lines.push(`• My Growth Goal: ${gw.growthStatement || '[Write your goal here]'}`);
+
+      const tempInput = document.createElement('textarea');
+      tempInput.value = lines.join('\n');
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempInput);
+
+      showToast('Copied full evaluation & goal sheet to clipboard!');
+    }
+
+    /***********************************************************************
+     * 13. CUSTOMIZE RUBRIC MATRIX MODAL (SAVED PER ADMIN IN CLOUD)
+     ***********************************************************************/
+    let editingCategoriesDraft = [];
+
+    function openRubricEditorModal() {
+      const area = rubricAreas[activeAreaIndex];
+      document.getElementById('editorModalAreaName').textContent = `${area.number}. ${area.title}`;
+      editingCategoriesDraft = JSON.parse(JSON.stringify(area.categories));
+
+      renderEditorModalRows();
+      const modal = document.getElementById('rubricEditorModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeRubricEditorModal() {
+      const modal = document.getElementById('rubricEditorModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function renderEditorModalRows() {
+      const container = document.getElementById('editorModalRowsContainer');
+      container.innerHTML = editingCategoriesDraft.map((cat, idx) => `
+        <div class="bg-slate-50 rounded-xl border border-slate-200 p-4 space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-indigo-700">
+              Category of Skill Row #${idx + 1}
+            </span>
+            <button onclick="removeEditorCategoryRow(${idx})" class="text-xs text-rose-600 hover:text-rose-800 font-semibold flex items-center gap-1">
+              <i class="fa-solid fa-trash"></i> Remove Row
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Category of Skill Title</label>
+              <input type="text" value="${escapeHtml(cat.name)}" oninput="updateDraftCategory(${idx}, 'name', this.value)"
+                class="w-full px-3 py-1.5 text-sm rounded-lg border border-slate-300 font-semibold" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Bulleted Indicators (one per line)</label>
+              <textarea rows="2" oninput="updateDraftBullets(${idx}, this.value)"
+                class="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300">${escapeHtml(cat.bullets.join('\n'))}</textarea>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-rose-700 mb-1">Low (1,2) Exact Text</label>
+              <textarea rows="3" oninput="updateDraftCategory(${idx}, 'low', this.value)"
+                class="w-full p-2 text-xs rounded-lg border border-rose-200 bg-white">${escapeHtml(cat.low)}</textarea>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-amber-700 mb-1">Mid (3,4,5) Exact Text</label>
+              <textarea rows="3" oninput="updateDraftCategory(${idx}, 'mid', this.value)"
+                class="w-full p-2 text-xs rounded-lg border border-amber-200 bg-white">${escapeHtml(cat.mid)}</textarea>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-emerald-700 mb-1">High (6,7) Exact Text</label>
+              <textarea rows="3" oninput="updateDraftCategory(${idx}, 'high', this.value)"
+                class="w-full p-2 text-xs rounded-lg border border-emerald-200 bg-white">${escapeHtml(cat.high)}</textarea>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function updateDraftCategory(idx, field, val) {
+      editingCategoriesDraft[idx][field] = val;
+    }
+
+    function updateDraftBullets(idx, val) {
+      editingCategoriesDraft[idx].bullets = val
+        .split('\n')
+        .map(s => s.replace(/^[•\-*]\s*/, '').trim())
+        .filter(Boolean);
+    }
+
+    function addEditorCategoryRow() {
+      editingCategoriesDraft.push({
+        id: 'cat_' + Date.now(),
+        name: 'New Category of Skill',
+        bullets: ['Behavioral indicator 1', 'Behavioral indicator 2'],
+        low: 'Enter Low (1,2) rating description here.',
+        mid: 'Enter Mid (3,4,5) rating description here.',
+        high: 'Enter High (6,7) rating description here.'
+      });
+      renderEditorModalRows();
+    }
+
+    function removeEditorCategoryRow(idx) {
+      if (editingCategoriesDraft.length <= 1) {
+        showToast('Each broad area must have at least one category row.', 'amber');
+        return;
+      }
+      editingCategoriesDraft.splice(idx, 1);
+      renderEditorModalRows();
+    }
+
+    function restoreDefaultAreaRubric() {
+      const defaultArea = DEFAULT_RUBRIC_AREAS[activeAreaIndex];
+      editingCategoriesDraft = JSON.parse(JSON.stringify(defaultArea.categories));
+      renderEditorModalRows();
+      showToast(`Restored default rubric descriptors for ${defaultArea.title}`);
+    }
+
+    async function saveCustomRubricChanges() {
+      rubricAreas[activeAreaIndex].categories = JSON.parse(JSON.stringify(editingCategoriesDraft));
+      rubricAreas[activeAreaIndex].isVerbatimUploaded = true;
+      await saveAdminCustomRubricToCloud();
+      closeRubricEditorModal();
+      renderAll();
+      showToast(`Saved updated matrix text to ${currentAdmin.name}'s Cloud Profile!`);
+    }
+
+    /***********************************************************************
+     * 14. UTILITIES & GLOBAL WINDOW BINDINGS
+     ***********************************************************************/
+    function escapeHtml(str) {
+      if (typeof str !== 'string') return '';
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function showToast(message, type = 'indigo') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      const bgClass = type === 'amber' ? 'bg-amber-600' : 'bg-slate-900';
+      toast.className = `${bgClass} text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl shadow-lg border border-white/10 flex items-center gap-2 transition-all duration-300`;
+      toast.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i> <span>${escapeHtml(message)}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 2800);
+    }
+
+    // Expose event handlers to global scope for inline HTML onclick/oninput attributes
+    Object.assign(window, {
+      switchObservationProfile,
+      createNewObservationProfile,
+      duplicateCurrentProfile,
+      duplicateProfileById,
+      promptDeleteCurrentProfile,
+      promptDeleteProfileById,
+      closeConfirmDialog,
+      setMainView,
+      openRubricEditorModal,
+      closeRubricEditorModal,
+      addEditorCategoryRow,
+      removeEditorCategoryRow,
+      restoreDefaultAreaRubric,
+      saveCustomRubricChanges,
+      updateDraftCategory,
+      updateDraftBullets,
+      updateMetadata,
+      selectBroadArea,
+      navigateArea,
+      selectCategoryBand,
+      clearCategoryRating,
+      clearCurrentAreaRatings,
+      saveAreaNotes,
+      insertSelectedDescriptorsIntoFeedback,
+      saveGoalWorksheet,
+      copyReportTextToClipboard,
+      openAdminAuthModal,
+      closeAdminAuthModal,
+      switchAuthTab,
+      handleAdminSignIn,
+      handleAdminSignUp,
+      quickDemoAdminLogin,
+      signOutAdministrator,
+      selectAdminFromList,
+      openTeachersDirectoryModal,
+      closeTeachersDirectoryModal,
+      renderTeachersDirectoryList,
+      openProfileFromDirectory,
+      exportAdminProfilesToJson,
+      importAdminProfilesFromJson
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderAll();
+      initFirebaseCloud();
+    });
+  </script>
+</body>
+</html>
